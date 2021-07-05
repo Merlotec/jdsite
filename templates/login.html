@@ -1,0 +1,25 @@
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10">
+            <div class="section-head align-center mb-4">
+                <h3 class="mbr-section-title mb-0 mbr-fonts-style display-2">
+                    <strong>Login</strong>
+                </h3>
+                
+            </div>
+            
+            <div id="bootstrap-toggle" class="toggle-panel accordionStyles tab-content">
+                <h3 style="text-align: center;">Enter your login details below</h3>
+                <br><br>
+                <p style="color: red;">{{login_err_msg}}</p>
+                <form style="text-align: center; margin: 0 auto;" method="POST" action="/authenticate">
+                    <input name="username" style="text-align: left; font-family:'Courier New', Courier, monospace; font-size: medium; width: 60%;" type="text" placeholder="Username"></input>
+                    <br>
+                    <input name="password" style="text-align: left; font-family:'Courier New', Courier, monospace; font-size: medium; width: 60%;" type="text" placeholder="Password"></input>
+                    <br><br><br>
+                    <input style="margin: auto;" class="btn btn-secondary display-4" type="submit"/>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
