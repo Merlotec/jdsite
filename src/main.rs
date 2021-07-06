@@ -1,8 +1,8 @@
 #![feature(proc_macro_hygiene)]
-use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Responder, Result, body::Body, error::ErrorNotFound, body::PrivateHelper, get, http, http::{StatusCode, header::{ContentDisposition, DispositionParam, DispositionType}}, web};
+use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Responder, Result,  error::ErrorNotFound, http, web};
 use actix_files::{NamedFile, Files};
 use std::path::PathBuf;
-use std::sync::{Mutex, Arc};
+use std::sync::Arc;
 
 #[macro_use]
 pub mod db;
@@ -34,7 +34,7 @@ async fn static_file(req: HttpRequest) -> Result<NamedFile> {
     }
 }
 
-async fn root(req: HttpRequest) -> impl Responder {
+async fn root(_req: HttpRequest) -> impl Responder {
     let mut r = HttpResponse::PermanentRedirect();
     r.header(http::header::LOCATION, "/home.html");
     
@@ -43,17 +43,53 @@ async fn root(req: HttpRequest) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
-    println!("Initialising...");
-
     let data: Arc<SharedData> = Arc::new(SharedData::load_from_disk("root".to_string()).expect("Failed to load database data!"));
+    /*
+    data.create_user("ncbmknight@gmail.com", "Nemisite", &user::User {
+        email: "ncbmknight@gmail.com".to_owned(),
+        forename: "Brodie".to_owned(),
+        surname: "Knight".to_owned(),
+        user_agent: user::UserAgent::Owner,
+    }).expect("Failed to create user!");
+*/
+
+    std::thread::spawn(|| {
+        loop {
+            use std::io::{stdin,stdout,Write};
+            let mut s = String::new();
+            let _ = stdout().flush();
+            stdin().read_line(&mut s).expect("Did not enter a correct string");
+            if let Some('\n')=s.chars().next_back() {
+                s.pop();
+            }
+            if let Some('\r')=s.chars().next_back() {
+                s.pop();
+            }
+            
+            if s == "k" {
+                std::process::exit(0);
+            } else {
+                println!("Unrecognised command {}", s);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    });
 
     HttpServer::new(move || { 
         App::new()
             .data(data.clone())
+            // Login
+            .service(page::login::login_get)
+            .service(page::login::login_post)
+            // Org
+            .service(page::orgs::org_get)
+            .service(page::orgs::add_org_post)
+            // Root
             .route("/", web::get().to(root))
+            // Static files
             .route("/{filename:.*}", web::get().to(static_file))
             .service(Files::new("/", "static").index_file("index.html"))
+            
     })
         .bind("0.0.0.0:80")?
         .run()

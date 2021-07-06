@@ -1,6 +1,5 @@
 
 use crate::{db, define_uuid_key};
-use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]

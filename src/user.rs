@@ -1,7 +1,3 @@
-use std::path::Path;
-use sled::Db;
-use uuid::Uuid;
-
 use crate::{db, define_uuid_key, org::OrgKey};
 
 use serde::{Serialize, Deserialize};
@@ -16,6 +12,12 @@ pub struct User {
     pub user_agent: UserAgent,
 }
 
+impl User {
+    pub fn name(&self) -> String {
+        self.forename.clone() + " " + &self.surname
+    }
+}
+
 /// Contains all the different types of user.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum UserAgent {
@@ -24,6 +26,16 @@ pub enum UserAgent {
     Orginisation(OrgKey),
     Associate(OrgKey),
     Client(OrgKey),
+}
+
+impl UserAgent {
+    pub fn can_view_orgs(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            _ => false,
+        }
+    }
 }
 
 define_uuid_key!(UserKey);

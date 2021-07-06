@@ -1,6 +1,4 @@
 use std::path::Path;
-use sled::Db;
-use uuid::Uuid;
 use crate::{db, db::Database, user::UserKey};
 use std::fmt;
 

@@ -1,58 +1,35 @@
 <!DOCTYPE html>
 <html  >
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <link rel="shortcut icon" href="assets/images/logo.png" type="image/x-icon">
-  <meta name="description" content="">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="assets/images/logo.png" type="image/x-icon">
+    <meta name="description" content="">
   
   
   <title>{{page_title}}</title>
-  <link rel="stylesheet" href="assets/web/assets/mobirise-icons2/mobirise2.css">
-  <link rel="stylesheet" href="assets/tether/tether.min.css">
-  <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
-  <link rel="stylesheet" href="assets/bootstrap/css/bootstrap-grid.min.css">
-  <link rel="stylesheet" href="assets/bootstrap/css/bootstrap-reboot.min.css">
-  <link rel="stylesheet" href="assets/dropdown/css/style.css">
-  <link rel="stylesheet" href="assets/socicon/css/styles.css">
-  <link rel="stylesheet" href="assets/theme/css/style.css">
-  <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css"><link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css" type="text/css">
+  
+  <link rel="stylesheet" href="assets/style.css">
   
 </head>
+
 <body>
-  
-  <section class="menu menu3 cid-sglTRYY5sU" once="menu" id="menu3-3">
-    
-    <nav class="navbar navbar-dropdown navbar-fixed-top navbar-expand-lg">
+
+  <section class="menu">
+    <nav class="navbar">
         <div class="container">
             <div class="navbar-brand">
-                
-                <span class="navbar-caption-wrap"><a class="navbar-caption text-black display-7">{{page_heading}}</a></span>
+                {{{page_heading}}} <span class="divider"></span> <span class="{{{page_user_class}}}">{{{page_user}}}</span>
             </div>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-                <div class="hamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav nav-dropdown nav-right" data-app-modern-menu="true">
-                    {{page_nav}}
+            <div class="navbar-right">
+                <ul class="nav-list" data-app-modern-menu="true">
+                    {{{page_nav}}}
                 </ul>
                 <div class="icons-menu">
-                    
-                        <span class="p-2 mbr-iconfont socicon-facebook socicon"></span>
-                    
-                    
-                        <span class="p-2 mbr-iconfont socicon-twitter socicon"></span>
-                    
-                    
-                        <span class="p-2 mbr-iconfont socicon-instagram socicon"></span>
-                    
-                    
+                    <span class="p-2 mbr-iconfont socicon-facebook socicon"></span>  
+                    <span class="p-2 mbr-iconfont socicon-twitter socicon"></span>
+                    <span class="p-2 mbr-iconfont socicon-instagram socicon"></span>
                 </div>
                 
             </div>
@@ -60,8 +37,8 @@
     </nav>
 </section>
 
-<section class="content17 cid-sgm10dq5pt" id="content17-6">
-    {{page_body}}
+<section class="content">
+    {{{page_body}}}
 </section>
 </body>
 </html>

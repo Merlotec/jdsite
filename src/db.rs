@@ -2,6 +2,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use std::marker;
 use std::path::Path;
 use std::fmt;
+use std::convert::TryFrom;
 
 #[macro_export]
 macro_rules! define_uuid_key {
@@ -32,6 +33,21 @@ macro_rules! define_uuid_key {
         impl ToString for $T {
             fn to_string(&self) -> String {
                 self.0.to_string()
+            }
+        }
+
+        impl std::convert::TryFrom<sled::IVec> for $T {
+            type Error = std::array::TryFromSliceError;
+            fn try_from(vec: sled::IVec) -> Result<$T, Self::Error> {
+                Ok(
+                    Self(
+                        uuid::Uuid::from_bytes(
+                            <[u8; 16]>::try_from(
+                                <sled::IVec as AsRef<[u8]>>::as_ref(&vec)
+                            )?
+                        )
+                    )
+                )
             }
         }
     }
@@ -127,13 +143,31 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
     }
 
     /// Executes f for each value that can be deserialized in the database.
-    pub fn for_each_val<F>(&self, f: F)
-    where F: Fn(V) {
+    pub fn for_each_val<F>(&self, mut f: F)
+    where F: FnMut(V) {
         for item in self.db.iter() {
             if let Ok((_, bytes)) = item {
                 match bincode::deserialize(&bytes) {
                     Ok(v) => f(v),
-                    Err(e) => {},
+                    Err(_) => {},
+                }
+            }
+        }
+    }
+
+    /// Only executes if both key and value can be properly deserialised.
+    pub fn for_each<F>(&self, mut f: F)
+    where K: TryFrom<sled::IVec> + Sized, F: FnMut(K, V) {
+        for item in self.db.iter() {
+            if let Ok((key, bytes)) = item {
+                match bincode::deserialize(&bytes) {
+                    Ok(v) => {
+                        match K::try_from(key) {
+                            Ok(k) => f(k, v),
+                            Err(_) => {},
+                        }
+                    },
+                    Err(_) => {},
                 }
             }
         }
@@ -148,7 +182,7 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
                     Ok(v) => { 
                         f(v) 
                     },
-                    Err(e) => retain_undeserializable,
+                    Err(_) => retain_undeserializable,
                 };
 
                 if !retain {
@@ -158,7 +192,7 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
         }
 
         for to_delete in deletion_list.iter() {
-            self.db.remove(to_delete);
+            let _ = self.db.remove(to_delete);
         }
     }
 }

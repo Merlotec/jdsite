@@ -1,0 +1,88 @@
+<div class="container">
+    <div class="center-content">
+        <script>
+            function searchOrgs() {
+              // Declare variables
+              var input, filter, table, tr, td, i, txtValue;
+              input = document.getElementById("org_search_input");
+              filter = input.value.toUpperCase();
+              table = document.getElementById("org_table");
+              tr = table.getElementsByTagName("tr");
+            
+              // Loop through all table rows, and hide those who don't match the search query
+              for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                  txtValue = td.textContent || td.innerText;
+                  if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                  } else {
+                    tr[i].style.display = "none";
+                  }
+                }
+              }
+            }
+
+            function showModal(id) {
+              var modal = document.getElementById(id);
+              modal.style.display = "block";
+            }
+
+            function closeModal(id) {
+              var modal = document.getElementById(id);
+              modal.style.display = "none";
+            }
+
+            function registerModal(id) {
+              var modal = document.getElementById(id);
+
+              window.onclick = function(event) {
+                if (event.target == modal) {
+                  modal.style.display = "none";
+                }
+              }
+            }
+
+            registerModal('addOrgModal');
+        </script>
+
+        <h2> Organisations </h2>
+        <h3 style="text-align: center;">Below is the list of organisations signed up to senior duke:</h3>
+        <br>
+
+        <div class="table-content">        
+          <input type="text" class="input-box" id="org_search_input" style="float:center; margin-right: 20px;" onkeyup="searchOrgs()" placeholder="Search organisations...">
+
+          <button title="Add Organisation" class="submit-button" style="float: center;" onclick="showModal('addOrgModal')">Add Organisation</button>
+          <br><br>
+          <table class="content-table" id="org_table">
+            <tr class="table-header">
+                <th style="width:30%;">Organisation Name</th>
+                <th style="width:30%;">Admin</th>
+                <th style="width:10%;">Unreviewed Sections</th>
+                <th style="width:10%;">Teachers</th>
+                <th style="width:10%;">Pupils</th>
+                <th style="width:10%;">Credits</th>
+            </tr>
+            {{{org_rows}}}
+          </table>
+        </div>
+    </div>
+</div>
+
+
+<div id="addOrgModal" class="modal">
+  <div class="modal-content">
+    <span onclick="closeModal('addOrgModal')" class="modal-close">&times;</span>
+    <h2 style="text-align: center;">
+        Add Organisation
+    </h2>
+    <h3 style="text-align: center;">Enter the name of the organisation below:</h3>
+    <br>
+    <form style="text-align: center;" method="POST" action="{{{add_org_url}}}">
+        <input name="name" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Organisation Name"></input>
+        <input style="margin: auto;" class="submit-button" type="submit" value="Add Organisation"/>
+        <br><br>
+    </form>
+  </div>
+</div>

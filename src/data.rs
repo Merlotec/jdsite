@@ -86,7 +86,7 @@ impl SharedData {
                 match self.login_db.add_entry(username, &login_entry) {
                     Ok(_) => Ok(()),
                     Err(e) => {
-                        self.user_db.remove_silent(&user_id);
+                        let _ = self.user_db.remove_silent(&user_id);
                         Err(e)
                     },
                 }
@@ -96,12 +96,12 @@ impl SharedData {
         }
     }
 
-    pub fn authenticate_context_from_request(&self, response: &HttpRequest) -> Result<Option<AuthContext>, db::Error> {
+    pub fn authenticate_context_from_request(&self, response: &HttpRequest, push_expiry: bool) -> Result<Option<AuthContext>, db::Error> {
         match response.cookie(dir::AUTH_COOKIE)  {
             Some(auth_token) => {
                 match AuthToken::from_str(auth_token.value()) {
-                    Ok(auth_token) => self.authenticate_context(auth_token),
-                    Err(e) => Ok(None),
+                    Ok(auth_token) => self.authenticate_context(auth_token, push_expiry),
+                    Err(_) => Ok(None),
                 }
                 
             },
@@ -109,8 +109,8 @@ impl SharedData {
         }
     }
 
-    pub fn authenticate_context(&self, auth_token: AuthToken) -> Result<Option<AuthContext>, db::Error> {
-        match self.auth_manager.check_token(&auth_token) {
+    pub fn authenticate_context(&self, auth_token: AuthToken, push_expiry: bool) -> Result<Option<AuthContext>, db::Error> {
+        match self.auth_manager.check_token(&auth_token, push_expiry) {
             Ok(Some(user_id)) => {
                 match self.user_db.fetch(&user_id) {
                     Ok(Some(user)) => {

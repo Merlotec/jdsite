@@ -9,6 +9,7 @@ use std::path::Path;
 pub struct AuthSession {
     user_id: UserKey,
     expiry: SystemTime,
+    timeout: Duration,
 }
 
 define_uuid_key!(AuthToken);
@@ -38,6 +39,7 @@ impl AuthManager {
         let session = AuthSession {
             user_id: *user_id,
             expiry: SystemTime::now() + timeout,
+            timeout,
         };
 
         self.db().insert(&token, &session)?;
@@ -45,11 +47,16 @@ impl AuthManager {
         Ok(token)
     }
 
-    pub fn check_token(&self, token: &AuthToken) -> Result<Option<UserKey>, db::Error> {
+    pub fn check_token(&self, token: &AuthToken, push_expiry: bool) -> Result<Option<UserKey>, db::Error> {
         let session = self.db().fetch(token)?;
         match session {
-            Some(s) => {
+            Some(mut s) => {
                 if s.expiry > SystemTime::now() {
+                    if push_expiry {
+                        s.expiry += s.timeout;
+                        // Attempt to push back timeout.
+                        let _ = self.db.insert(token, &s);
+                    }
                     Ok(Some(s.user_id))
                 } else {
                     // If the key is expired but still in the table, remove it.
@@ -82,13 +89,13 @@ pub struct AuthContext {
 }
 
 impl AuthContext {
-    pub fn home_page(&self) -> String {
+    pub fn root_page(&self) -> String {
         match self.user.user_agent {
             UserAgent::Owner => dir::ORGS_PAGE.to_owned(),
             UserAgent::Admin => dir::ORGS_PAGE.to_owned(),
-            UserAgent::Orginisation(org_id) => dir::ORG_ROOT_PATH.to_owned() + "/" + &org_id.to_string(),
-            UserAgent::Associate(org_id) => dir::ORG_ROOT_PATH.to_owned() + "/" + &org_id.to_string(),
-            UserAgent::Client(org_id) => dir::ORG_ROOT_PATH.to_owned()
+            UserAgent::Orginisation(org_id) => dir::org_path(org_id),
+            UserAgent::Associate(org_id) => dir::org_path(org_id),
+            UserAgent::Client(org_id) => dir::client_path(org_id, self.user_id),
         }
     }
 }
