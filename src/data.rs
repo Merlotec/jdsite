@@ -6,7 +6,16 @@ use auth::{AuthContext, AuthToken};
 use actix_web::HttpMessage;
 use std::str::FromStr;
 use std::time::Duration;
-use handlebars::Handlebars;
+use handlebars::{
+    Handlebars,
+    Helper,
+    RenderContext,
+    Context,
+    Output,
+    HelperResult,
+    RenderError,
+};
+
 
 pub struct SharedData {
     pub fs_root: String,

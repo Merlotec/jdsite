@@ -72,9 +72,22 @@
               }
             }
 
+            function validateOrgName() {
+              var orgNameInput = document.getElementById('addOrgModalOrgName');
+
+              var button = document.getElementById('addOrgModalSubmit');
+              if (orgNameInput.value == null || orgNameInput.value.trim().length == 0 || orgNameInput.value.includes('\'') || orgNameInput.value.includes('\"')) {
+                button.disabled = true;
+                button.className = 'submit-button-disabled';
+              } else {
+                button.disabled = false;
+                button.className = 'submit-button';
+              }
+            }
+
             function showDeleteOrgModal(orgId, orgName) {
               var text = document.getElementById('deleteOrgModalText');
-              text.innerHTML = 'To delete <b style=\"color:white;\"">' + orgName + '</b> please enter the name of the organisation exactly as seen in bold:';
+              text.innerHTML = 'Once an organisation has been deleted it cannot be recovered - all associated data will be lost. To delete <b style=\"color:white;\"">' + orgName + '</b> please enter the name of the organisation exactly as seen in bold:';
 
               var orgIdInput = document.getElementById('deleteOrgModalOrgId');
               orgIdInput.value = orgId;
@@ -89,6 +102,7 @@
               button.disabled = true;
 
               confirmOrgNameForDeletion();
+              validateOrgName();
 
               showModal('deleteOrgModal');
             }
@@ -105,7 +119,7 @@
         <div class="table-content">        
           <input type="text" class="input-box" id="orgSearchInput" style="float:center; margin-right: 20px;" onkeyup="searchOrgs()" placeholder="Search organisations..."/>
 
-          <button title="Add Organisation" class="submit-button" style="float: center;" onclick="showModal('addOrgModal')">Add Organisation</button>
+          <button title="Add Organisation" class="submit-button" style="float: center;" onclick="validateOrgName(); showModal('addOrgModal')">Add Organisation</button>
           <br><br>
           <table class="content-table" id="org_table">
             <tr class="table-header">
@@ -133,8 +147,8 @@
     <h3 style="text-align: center;">Enter the name of the organisation below:</h3>
     <br>
     <form style="text-align: center;" method="POST" action="{{{add_org_url}}}">
-        <input name="name" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Organisation Name"></input>
-        <input style="margin: auto;" class="submit-button" type="submit" value="Add Organisation"/>
+        <input id="addOrgModalOrgName" onkeyup="validateOrgName()" name="name" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Organisation Name"></input>
+        <input id="addOrgModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Add Organisation"/>
         <br><br>
     </form>
   </div>
@@ -171,7 +185,7 @@
         <input id="deleteOrgModalConfirm" class="input-box" type="text" onkeyup="confirmOrgNameForDeletion()" style="width: 60%; margin-right: 20px;" placeholder="Confirm organisation name..."></input>
         <input id="deleteOrgModalOrgId" name="org_id" type="hidden" value=""/>
         <input id="deleteOrgModalOrgName" type="hidden" value=""/>
-        <input id="deleteOrgModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete Org"/>
+        <input id="deleteOrgModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete"/>
         <br><br>
     </form>
   </div>

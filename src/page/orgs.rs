@@ -106,6 +106,11 @@ pub async fn add_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, fo
                 
                 let org = org::Org::new(form.name.clone());
 
+                if org.name.contains("\'") || org.name.contains("\"") || org.name.contains("\r") || org.name.contains("\t") {
+                    return HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                    .set_body(Body::from("Dissalowed characters in org name!"));
+                }
+
                 match data.org_db.insert(&org::OrgKey::generate(), &org) {
                     Ok(_) => {
                         let mut r = HttpResponse::SeeOther();
