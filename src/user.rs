@@ -1,4 +1,4 @@
-use crate::{db, define_uuid_key, org::OrgKey};
+use crate::{db, define_uuid_key, org::OrgKey, section::SectionKey};
 
 use serde::{Serialize, Deserialize};
 
@@ -25,7 +25,10 @@ pub enum UserAgent {
     Admin,
     Orginisation(OrgKey),
     Associate(OrgKey),
-    Client(OrgKey),
+    Client {
+        org_id: OrgKey,
+        sections: [Option<SectionKey>; 6],
+    },
 }
 
 impl UserAgent {
@@ -51,7 +54,27 @@ impl UserAgent {
             UserAgent::Admin => true,
             UserAgent::Orginisation(agent_org_id) => agent_org_id == org_id,
             UserAgent::Associate(agent_org_id) => agent_org_id == org_id,
-            UserAgent::Client(_) => false,
+            UserAgent::Client { .. } => false,
+        }
+    }
+
+    pub fn agent_string(&self) -> String {
+        match self {
+            UserAgent::Owner => "Owner".to_owned(),
+            UserAgent::Admin => "Global Administrator".to_owned(),
+            UserAgent::Orginisation(_) => "Organisation Administrator".to_owned(),
+            UserAgent::Associate(_) => "Teacher".to_owned(),
+            UserAgent::Client { .. } => "Pupil".to_owned(),
+        }
+    }
+
+    pub fn org_id(&self) -> Option<OrgKey> {
+        match *self {
+            UserAgent::Owner => None,
+            UserAgent::Admin => None,
+            UserAgent::Orginisation(org_id) => Some(org_id),
+            UserAgent::Associate(org_id) => Some(org_id),
+            UserAgent::Client { org_id, .. } => Some(org_id),
         }
     }
 

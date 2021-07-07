@@ -79,6 +79,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || { 
         App::new()
             .data(data.clone())
+            //User
+            .service(page::user::user_get)
             // Login
             .service(page::login::login_get)
             .service(page::login::login_post)

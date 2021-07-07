@@ -76,12 +76,18 @@ a {
 }
 
 .user-string {
+    text-decoration: none;
     font-weight: 50;
     padding-bottom: 3px;
+    color: rgb(175, 175, 175);
+}
+
+.user-string:hover {
     color: white;
 }
 
 .no-user-string {
+    text-decoration: none;
     font-weight: 50;
     padding-bottom: 3px;
     color: rgb(175, 175, 175);
@@ -334,7 +340,7 @@ a {
 
 .path-header {
     padding: 20px;
-    font-size: 28px;
+    font-size: 26px;
     color: rgb(66, 65, 78);
 }
 
@@ -396,4 +402,24 @@ a {
     font-size: 18px;
 
     text-decoration: none;
+}
+
+.client-table {
+    border-collapse: collapse;
+    margin: auto;
+    width: 70%;
+    max-width: 750px;
+}
+
+.attribute-name {
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+
+}
+
+.attribute-value {
+    color: rgb(175, 175, 175);
+    font-weight: normal;
+    font-size: 15px;
 }

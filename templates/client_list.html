@@ -1,0 +1,25 @@
+
+
+
+<div class="container">
+    <div class="center-content">
+        <br>
+        <h3 style="text-align: center;">Below is the list of pupil accounts signed up to senior duke:</h3>
+        <div class="table-content">        
+          <input type="text" class="input-box" id="orgSearchInput" style="float:center; margin-right: 20px;" onkeyup="searchOrgs()" placeholder="Search pupils..."/>
+
+          <button title="Add Organisation" class="submit-button" style="float: center;" onclick="validateOrgName(); showModal('addOrgModal')">Add Pupil</button>
+          <br><br>
+          <table class="client-table" id="org_table">
+            <tr class="table-header">
+                <th style="width:40%;">Pupil Name</th>
+                <th style="width:35%;">Email</th>
+                <th style="width:10%;">Sections Completed</th>
+                <th style="width:10%;">Unreviewed Sections</th>
+                <th style="width:5%;"></th>
+            </tr>
+            {{{client_rows}}}
+          </table>
+        </div>
+    </div>
+</div>

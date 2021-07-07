@@ -1,6 +1,7 @@
 pub mod login;
 pub mod orgs;
 pub mod clients;
+pub mod user;
 
 use serde_json::json;
 use actix_web::{
@@ -33,17 +34,19 @@ pub fn render_page(ctx: Option<AuthContext>, data: &SharedData, title: String, h
         nav_string += &data.handlebars.render("nav_item", &nav_map)?;
     }
 
-    let (user_string, user_class, auth_link, auth_action): (String, String, String, String) = {
+    let (user_string, user_class, user_link, auth_link, auth_action): (String, String, String, String, String) = {
         match ctx {
             Some(ctx) => (
                 ctx.user.forename.to_owned() + " " +  &ctx.user.surname, 
                 "user-string".to_owned(),
+                dir::user_path(ctx.user_id),
                 dir::LOGOUT_PATH.to_owned(),
                 "Logout".to_owned(),
             ),
             None => (
                 "Not Logged In".to_owned(), 
                 "no-user-string".to_owned(),
+                "".to_owned(),
                 dir::LOGIN_PAGE.to_owned(),
                 "Login".to_owned(),
             ),
@@ -54,6 +57,7 @@ pub fn render_page(ctx: Option<AuthContext>, data: &SharedData, title: String, h
         "page_title": title,
         "page_heading": heading,
         "page_user": user_string,
+        "page_user_link": user_link,
         "page_user_class": user_class,
         "page_auth_link": auth_link,
         "page_auth_action": auth_action,

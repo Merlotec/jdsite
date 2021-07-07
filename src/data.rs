@@ -171,15 +171,15 @@ impl SharedData {
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
-            UserAgent::Orginisation(org_key) => vec! [
-                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_key.to_string(), dir::CLIENTS_TITLE.to_string()),
+            UserAgent::Orginisation(org_id) => vec! [
+                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string(), dir::CLIENTS_TITLE.to_string()),
                 //(dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
-            UserAgent::Associate(org_key) => vec! [
-                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_key.to_string(), dir::CLIENTS_TITLE.to_string()),
+            UserAgent::Associate(org_id) => vec! [
+                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string(), dir::CLIENTS_TITLE.to_string()),
             ],
-            UserAgent::Client(org_key) => vec! [
-                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_key.to_string() + dir::CLIENT_ROOT_PATH + "/" + &user_key.to_string(), dir::SECTIONS_TITLE.to_string()),
+            UserAgent::Client { org_id, .. } => vec! [
+                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string() + dir::CLIENT_ROOT_PATH + "/" + &user_key.to_string(), dir::SECTIONS_TITLE.to_string()),
             ],
         }
     }

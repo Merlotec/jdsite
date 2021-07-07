@@ -1,117 +1,119 @@
+<script>
+  function searchOrgs() {
+    // Declare variables
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.getElementById("orgSearchInput");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("org_table");
+    tr = table.getElementsByTagName("tr");
+  
+    // Loop through all table rows, and hide those who don't match the search query
+    for (i = 0; i < tr.length; i++) {
+      td = tr[i].getElementsByTagName("td")[0];
+      if (td) {
+        txtValue = td.textContent || td.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
+        }
+      }
+    }
+  }
+
+  function showModal(id) {
+    var modal = document.getElementById(id);
+    modal.style.display = "block";
+  }
+
+  function closeModal(id) {
+    var modal = document.getElementById(id);
+    modal.style.display = "none";
+  }
+
+  function registerModal(id) {
+    var modal = document.getElementById(id);
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  }
+
+  function showAssignAdminModal(orgId, orgName) {
+    var text = document.getElementById('assignAdminModalText');
+    text.innerText = 'To assign an admin to ' + orgName + ', enter the email address to send the account creation link to:';
+
+    var adminId = document.getElementById('assignAdminModalOrgId');
+    adminId.value = orgId;
+
+    var emailInput = document.getElementById('assignAdminModalEmail');
+    emailInput.value = "";
+
+    showModal('assignAdminModal');
+  }
+
+  function confirmOrgNameForDeletion() {
+    var orgNameInput = document.getElementById('deleteOrgModalOrgName');
+    var orgName = orgNameInput.value;
+
+    var textInput = document.getElementById('deleteOrgModalConfirm');
+
+    var button = document.getElementById('deleteOrgModalSubmit');
+    if (orgName == textInput.value) {
+      button.disabled = false;
+      button.className = 'submit-button';
+    } else {
+      button.disabled = true;
+      button.className = 'submit-button-disabled';
+    }
+  }
+
+  function validateOrgName() {
+    var orgNameInput = document.getElementById('addOrgModalOrgName');
+
+    var button = document.getElementById('addOrgModalSubmit');
+    if (orgNameInput.value == null || orgNameInput.value.trim().length == 0 || orgNameInput.value.includes('\'') || orgNameInput.value.includes('\"')) {
+      button.disabled = true;
+      button.className = 'submit-button-disabled';
+    } else {
+      button.disabled = false;
+      button.className = 'submit-button';
+    }
+  }
+
+  function showDeleteOrgModal(orgId, orgName) {
+    var text = document.getElementById('deleteOrgModalText');
+    text.innerHTML = 'Once an organisation has been deleted it cannot be recovered - all associated data will be lost. To delete <b style=\"color:white;\"">' + orgName + '</b> please enter the name of the organisation exactly as seen in bold:';
+
+    var orgIdInput = document.getElementById('deleteOrgModalOrgId');
+    orgIdInput.value = orgId;
+
+    var orgNameInput = document.getElementById('deleteOrgModalOrgName');
+    orgNameInput.value = orgName;
+
+    var textInput = document.getElementById('deleteOrgModalConfirm');
+    textInput.value = "";
+
+    var button = document.getElementById('deleteOrgModalSubmit');
+    button.disabled = true;
+
+    confirmOrgNameForDeletion();
+    validateOrgName();
+
+    showModal('deleteOrgModal');
+  }
+
+  
+
+  window.onpageshow = (event) => searchOrgs();
+</script>
+
+
 <div class="container">
     <div class="center-content">
-        <script>
-            function searchOrgs() {
-              // Declare variables
-              var input, filter, table, tr, td, i, txtValue;
-              input = document.getElementById("orgSearchInput");
-              filter = input.value.toUpperCase();
-              table = document.getElementById("org_table");
-              tr = table.getElementsByTagName("tr");
-            
-              // Loop through all table rows, and hide those who don't match the search query
-              for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[0];
-                if (td) {
-                  txtValue = td.textContent || td.innerText;
-                  if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                  } else {
-                    tr[i].style.display = "none";
-                  }
-                }
-              }
-            }
-
-            function showModal(id) {
-              var modal = document.getElementById(id);
-              modal.style.display = "block";
-            }
-
-            function closeModal(id) {
-              var modal = document.getElementById(id);
-              modal.style.display = "none";
-            }
-
-            function registerModal(id) {
-              var modal = document.getElementById(id);
-
-              window.onclick = function(event) {
-                if (event.target == modal) {
-                  modal.style.display = "none";
-                }
-              }
-            }
-
-            function showAssignAdminModal(orgId, orgName) {
-              var text = document.getElementById('assignAdminModalText');
-              text.innerText = 'To assign an admin to ' + orgName + ', enter the email address to send the account creation link to:';
-
-              var adminId = document.getElementById('assignAdminModalOrgId');
-              adminId.value = orgId;
-
-              var emailInput = document.getElementById('assignAdminModalEmail');
-              emailInput.value = "";
-
-              showModal('assignAdminModal');
-            }
-
-            function confirmOrgNameForDeletion() {
-              var orgNameInput = document.getElementById('deleteOrgModalOrgName');
-              var orgName = orgNameInput.value;
-
-              var textInput = document.getElementById('deleteOrgModalConfirm');
-
-              var button = document.getElementById('deleteOrgModalSubmit');
-              if (orgName == textInput.value) {
-                button.disabled = false;
-                button.className = 'submit-button';
-              } else {
-                button.disabled = true;
-                button.className = 'submit-button-disabled';
-              }
-            }
-
-            function validateOrgName() {
-              var orgNameInput = document.getElementById('addOrgModalOrgName');
-
-              var button = document.getElementById('addOrgModalSubmit');
-              if (orgNameInput.value == null || orgNameInput.value.trim().length == 0 || orgNameInput.value.includes('\'') || orgNameInput.value.includes('\"')) {
-                button.disabled = true;
-                button.className = 'submit-button-disabled';
-              } else {
-                button.disabled = false;
-                button.className = 'submit-button';
-              }
-            }
-
-            function showDeleteOrgModal(orgId, orgName) {
-              var text = document.getElementById('deleteOrgModalText');
-              text.innerHTML = 'Once an organisation has been deleted it cannot be recovered - all associated data will be lost. To delete <b style=\"color:white;\"">' + orgName + '</b> please enter the name of the organisation exactly as seen in bold:';
-
-              var orgIdInput = document.getElementById('deleteOrgModalOrgId');
-              orgIdInput.value = orgId;
-
-              var orgNameInput = document.getElementById('deleteOrgModalOrgName');
-              orgNameInput.value = orgName;
-
-              var textInput = document.getElementById('deleteOrgModalConfirm');
-              textInput.value = "";
-
-              var button = document.getElementById('deleteOrgModalSubmit');
-              button.disabled = true;
-
-              confirmOrgNameForDeletion();
-              validateOrgName();
-
-              showModal('deleteOrgModal');
-            }
-
-            
-
-            window.onpageshow = (event) => searchOrgs();
-        </script>
-
+        
         <h2> Organisations </h2>
         <h3 style="text-align: center;">Below is the list of organisations signed up to senior duke:</h3>
         <br>

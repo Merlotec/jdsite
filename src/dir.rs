@@ -5,6 +5,12 @@ pub const AUTH_COOKIE: &'static str = "Auth";
 pub const LOGIN_REDIRECT_COOKIE: &'static str = "LoginRedirect";
 pub const APP_NAME: &'static str = "Senior Duke Portal";
 
+pub const USER_ROOT_PATH: &'static str = "/user";
+
+pub fn user_path(user_id: user::UserKey) -> String {
+    USER_ROOT_PATH.to_owned() + "/" + &user_id.to_string()
+}
+
 // Login
 pub const LOGIN_PAGE: &'static str = "/login";
 pub const LOGIN_POST_PATH: &'static str = "/login";

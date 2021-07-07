@@ -99,7 +99,7 @@ impl AuthContext {
             UserAgent::Admin => dir::ORGS_PAGE.to_owned(),
             UserAgent::Orginisation(org_id) => dir::org_path(org_id),
             UserAgent::Associate(org_id) => dir::org_path(org_id),
-            UserAgent::Client(org_id) => dir::client_path(org_id, self.user_id),
+            UserAgent::Client { org_id, .. } => dir::client_path(org_id, self.user_id),
         }
     }
 

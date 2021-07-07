@@ -1,0 +1,7 @@
+<tr class="table-row selectable-row" onclick="window.location.href='{{client_url}}'">
+    <td>{{{name}}}</td>
+    <td>{{{email}}}</td>
+    <td>{{{completed_sections}}}</td>
+    <td>{{{unreviewed_sections}}}</td>
+    <td style="text-align: center;"><div style="margin-top: -26px; height: 0px; font-size: 35px;" class="text-button" onclick="event.stopPropagation(); showDeleteClientModal('{{org_id}}', '{{name}}');">&times;</span></td>
+</tr>
