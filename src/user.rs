@@ -36,6 +36,26 @@ impl UserAgent {
             _ => false,
         }
     }
+
+    pub fn can_delete_orgs(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            _ => false,
+        }
+    }
+
+    pub fn can_view_org(&self, org_id: &OrgKey) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            UserAgent::Orginisation(agent_org_id) => agent_org_id == org_id,
+            UserAgent::Associate(agent_org_id) => agent_org_id == org_id,
+            UserAgent::Client(_) => false,
+        }
+    }
+
+    
 }
 
 define_uuid_key!(UserKey);

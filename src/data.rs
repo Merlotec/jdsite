@@ -74,6 +74,19 @@ impl SharedData {
         }
     }
 
+    pub fn logout(&self, req: &HttpRequest) -> sled::Result<()> {
+        match req.cookie(dir::AUTH_COOKIE)  {
+            Some(auth_token) => {
+                match AuthToken::from_str(auth_token.value()) {
+                    Ok(auth_token) => self.auth_manager.destroy_session(&auth_token),
+                    Err(e) => Ok(()),
+                }
+                
+            },
+            None => Ok(()),
+        }
+    }
+
     pub fn create_user(&self, username: &str, password: &str, user: &User) -> Result<(), login::LoginEntryError> {
         let user_id = UserKey::generate();
         match self.user_db.insert(&user_id, user) {
@@ -96,8 +109,8 @@ impl SharedData {
         }
     }
 
-    pub fn authenticate_context_from_request(&self, response: &HttpRequest, push_expiry: bool) -> Result<Option<AuthContext>, db::Error> {
-        match response.cookie(dir::AUTH_COOKIE)  {
+    pub fn authenticate_context_from_request(&self, req: &HttpRequest, push_expiry: bool) -> Result<Option<AuthContext>, db::Error> {
+        match req.cookie(dir::AUTH_COOKIE)  {
             Some(auth_token) => {
                 match AuthToken::from_str(auth_token.value()) {
                     Ok(auth_token) => self.authenticate_context(auth_token, push_expiry),

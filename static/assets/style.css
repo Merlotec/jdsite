@@ -1,5 +1,5 @@
 html {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: brandon-grotesque, sans-serif;
     color: rgb(175, 175, 175);
     background-color: rgb(57, 56, 63);
     padding: 0;
@@ -47,7 +47,9 @@ a {
     background-color: rgb(66, 65, 78);
     display: inline-block;
     width: 100%;
-    padding: 20px;
+    padding: 15px;
+    padding-left: 20px;
+    padding-bottom: 10px;
     box-sizing: border-box;
     margin: 0;
     border-bottom: 1px solid rgb(66, 65, 78);
@@ -62,29 +64,42 @@ a {
 
 .divider {
     display: inline;
-    border-left: 1px solid rgb(175, 175, 175);
+    border-left: 1px solid rgb(121, 121, 121);
     height: 100%;
     margin-right: 8px;
     margin-left: 6px;
 }
 
+.auth-section {
+    margin-top: 4px;
+    font-size: 14px;
+}
+
 .user-string {
     font-weight: 50;
-    font-size: 16px;
     padding-bottom: 3px;
-    color: #de9750;
+    color: white;
 }
 
 .no-user-string {
     font-weight: 50;
-    font-size: 16px;
     padding-bottom: 3px;
     color: rgb(175, 175, 175);
+    font-style: italic;
+}
+
+.auth-button {
+    color: #de9750;
+    font-weight: 50;
+}
+
+.auth-button:hover {
+    color: #f78f28;
 }
 
 .navbar-right {
     float: right;
-    margin-top: 5px;
+    margin-top: 13px;
 }
 
 .nav-item {
@@ -100,7 +115,7 @@ a {
     line-height: 100%;
     display: inline;
     font-weight: bold;
-    font-size: 15px;
+    font-size: 17px;
     color: #919191;
     text-align: center;
     padding: 16px;
@@ -134,6 +149,13 @@ a {
     margin-left: auto;
 }
 
+.left-content {
+    text-align: left;
+    position: auto;
+    margin-right: auto;
+    margin-left: auto;
+}
+
 .submit-button {
     border-style: none;
     padding: 10px;
@@ -146,7 +168,32 @@ a {
     cursor: pointer;
 }
 
+.submit-button-disabled {
+    border-style: none;
+    padding: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgb(43, 42, 56);
+    color: rgb(175, 175, 175);
+    border-radius: 3px;
+    font-size: 18px;
+    cursor: default;
+}
+
+
 .input-box:focus, textarea:focus, select:focus  {
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+    padding: 10px;
+    text-align: left; 
+    font-size: 18px; 
+    max-width: 500px;
+    width: 50%;
+    color: white;
+}
+
+.input-box:-webkit-autofill {
     background-color: rgb(66, 65, 78);
     border-style: hidden;
     box-shadow: none;
@@ -232,11 +279,11 @@ a {
 .text-button {
     color: #de9750;
     font-style: normal;
+    cursor: pointer;
 }
 
 .text-button:hover {
     color: #f78f28;
-    cursor: pointer;
 }
 
 /* The Modal (background) */
@@ -254,7 +301,7 @@ a {
   }
   
   /* Modal Content/Box */
-  .modal-content {
+.modal-content {
     background-color: rgb(57, 56, 63);
     border-radius: 15px;
     margin: 15% auto; /* 15% from the top and centered */
@@ -266,16 +313,87 @@ a {
   }
   
   /* The Close Button */
-  .modal-close {
+.modal-close {
     color: #de9750;
     float: right;
     font-size: 28px;
     font-weight: bold;
   }
   
-  .modal-close:hover,
-  .modal-close:focus {
+.modal-close:hover,
+.modal-close:focus {
     color: #f78f28;
     text-decoration: none;
     cursor: pointer;
   }
+
+.navbar-center {
+      width: 100%;
+      border-bottom: 1px solid rgb(66, 65, 78);
+}
+
+.path-header {
+    padding: 20px;
+    font-size: 28px;
+    color: rgb(66, 65, 78);
+}
+
+.header-item {
+    color:rgb(175, 175, 175);
+    text-decoration: none;
+}
+
+.header-item:hover {
+    color: white;
+}
+
+.org-nav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    margin-left: 20px;
+    overflow: hidden;
+}
+
+.org-nav-item {
+    display: inline-block;
+    color: #919191;
+    padding: 3px;
+    
+}
+
+.org-nav-item-selected {
+    display: inline-block;
+    color: white;
+    padding: 3px;
+    
+
+    border-bottom: 1px solid #f78f28;
+}
+
+
+.org-nav-item a {
+    display: inline;
+    color: inherit;
+    text-align: center;
+    padding: 16px;
+    font-size: 18px;
+
+    text-decoration: none;
+  }
+  
+.org-nav-item:hover {
+    color: white;
+    border-bottom: 1px solid white;
+}
+
+.org-nav-item-selected a {
+    display: inline;
+    color: inherit;
+    color: inherit;
+    text-align: center;
+    padding: 16px;
+    font-size: 18px;
+
+    text-decoration: none;
+}

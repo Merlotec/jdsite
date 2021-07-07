@@ -14,6 +14,7 @@ pub mod form;
 pub mod data;
 pub mod page;
 
+pub mod link;
 pub mod login;
 pub mod auth;
 pub mod user;
@@ -81,9 +82,15 @@ async fn main() -> std::io::Result<()> {
             // Login
             .service(page::login::login_get)
             .service(page::login::login_post)
+            .service(page::login::logout_get)
             // Org
             .service(page::orgs::org_get)
+            .service(page::orgs::orgs_get)
             .service(page::orgs::add_org_post)
+            .service(page::orgs::delete_org_post)
+            .service(page::orgs::assign_admin_post)
+            // Clients
+            .service(page::clients::clients_get)
             // Root
             .route("/", web::get().to(root))
             // Static files

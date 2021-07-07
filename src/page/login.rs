@@ -9,6 +9,8 @@ use actix_web::{
     http::Cookie,
 };
 
+use actix_web::HttpMessage;
+
 use serde_json::json;
 
 use crate::data::SharedData;
@@ -58,7 +60,7 @@ pub async fn login_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form
     match data.authenticate_context_from_request(&req, false) {
         Ok(ctx) => {
             if !form.username.is_empty() && !form.password.is_empty() {
-                match data.login(&form.username, &form.password, std::time::Duration::from_secs(60 * 60)) {
+                match data.login(&form.username, &form.password, std::time::Duration::from_secs(15 * 60)) {
                     Ok(ctx) => {
                         // Add cookie...
                         let auth_cookie = Cookie::new(dir::AUTH_COOKIE, ctx.auth_token.to_string());
@@ -81,3 +83,21 @@ pub async fn login_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form
                 .set_body(Body::from(format!("Error: {}", e))),
     }
 }
+
+#[get("/logout")]
+pub async fn logout_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
+    match data.logout(&req) {
+        Ok(_) => {
+            let mut r = HttpResponse::SeeOther();
+            if let Some(ref cookie) = req.cookie(dir::AUTH_COOKIE) {
+                r.del_cookie(cookie);
+            }
+            
+            r.header(http::header::LOCATION, dir::LOGIN_PAGE);
+            r.body("")
+        },
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                .set_body(Body::from(format!("Logout Error: {}", e))),
+    }
+}
+

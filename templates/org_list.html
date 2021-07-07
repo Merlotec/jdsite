@@ -4,7 +4,7 @@
             function searchOrgs() {
               // Declare variables
               var input, filter, table, tr, td, i, txtValue;
-              input = document.getElementById("org_search_input");
+              input = document.getElementById("orgSearchInput");
               filter = input.value.toUpperCase();
               table = document.getElementById("org_table");
               tr = table.getElementsByTagName("tr");
@@ -43,7 +43,59 @@
               }
             }
 
-            registerModal('addOrgModal');
+            function showAssignAdminModal(orgId, orgName) {
+              var text = document.getElementById('assignAdminModalText');
+              text.innerText = 'To assign an admin to ' + orgName + ', enter the email address to send the account creation link to:';
+
+              var adminId = document.getElementById('assignAdminModalOrgId');
+              adminId.value = orgId;
+
+              var emailInput = document.getElementById('assignAdminModalEmail');
+              emailInput.value = "";
+
+              showModal('assignAdminModal');
+            }
+
+            function confirmOrgNameForDeletion() {
+              var orgNameInput = document.getElementById('deleteOrgModalOrgName');
+              var orgName = orgNameInput.value;
+
+              var textInput = document.getElementById('deleteOrgModalConfirm');
+
+              var button = document.getElementById('deleteOrgModalSubmit');
+              if (orgName == textInput.value) {
+                button.disabled = false;
+                button.className = 'submit-button';
+              } else {
+                button.disabled = true;
+                button.className = 'submit-button-disabled';
+              }
+            }
+
+            function showDeleteOrgModal(orgId, orgName) {
+              var text = document.getElementById('deleteOrgModalText');
+              text.innerHTML = 'To delete <b style=\"color:white;\"">' + orgName + '</b> please enter the name of the organisation exactly as seen in bold:';
+
+              var orgIdInput = document.getElementById('deleteOrgModalOrgId');
+              orgIdInput.value = orgId;
+
+              var orgNameInput = document.getElementById('deleteOrgModalOrgName');
+              orgNameInput.value = orgName;
+
+              var textInput = document.getElementById('deleteOrgModalConfirm');
+              textInput.value = "";
+
+              var button = document.getElementById('deleteOrgModalSubmit');
+              button.disabled = true;
+
+              confirmOrgNameForDeletion();
+
+              showModal('deleteOrgModal');
+            }
+
+            
+
+            window.onpageshow = (event) => searchOrgs();
         </script>
 
         <h2> Organisations </h2>
@@ -51,18 +103,19 @@
         <br>
 
         <div class="table-content">        
-          <input type="text" class="input-box" id="org_search_input" style="float:center; margin-right: 20px;" onkeyup="searchOrgs()" placeholder="Search organisations...">
+          <input type="text" class="input-box" id="orgSearchInput" style="float:center; margin-right: 20px;" onkeyup="searchOrgs()" placeholder="Search organisations..."/>
 
           <button title="Add Organisation" class="submit-button" style="float: center;" onclick="showModal('addOrgModal')">Add Organisation</button>
           <br><br>
           <table class="content-table" id="org_table">
             <tr class="table-header">
                 <th style="width:30%;">Organisation Name</th>
-                <th style="width:30%;">Admin</th>
+                <th style="width:25%;">Admin</th>
                 <th style="width:10%;">Unreviewed Sections</th>
                 <th style="width:10%;">Teachers</th>
                 <th style="width:10%;">Pupils</th>
                 <th style="width:10%;">Credits</th>
+                <th style="width:5%;"></th>
             </tr>
             {{{org_rows}}}
           </table>
@@ -71,7 +124,7 @@
 </div>
 
 
-<div id="addOrgModal" class="modal">
+<div id="addOrgModal" class="modal" onload="registerModal('addOrgModal')">
   <div class="modal-content">
     <span onclick="closeModal('addOrgModal')" class="modal-close">&times;</span>
     <h2 style="text-align: center;">
@@ -82,6 +135,43 @@
     <form style="text-align: center;" method="POST" action="{{{add_org_url}}}">
         <input name="name" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Organisation Name"></input>
         <input style="margin: auto;" class="submit-button" type="submit" value="Add Organisation"/>
+        <br><br>
+    </form>
+  </div>
+</div>
+
+
+<div id="assignAdminModal" class="modal">
+  <div class="modal-content">
+    <span onclick="closeModal('assignAdminModal')" class="modal-close">&times;</span>
+    <h2 style="text-align: center;">
+        Assign Admin
+    </h2>
+    <h3 id="assignAdminModalText" style="text-align: center;"></h3>
+    <br>
+    <form style="text-align: center;" method="POST" action="{{assign_admin_url}}">
+        <input id="assignAdminModalEmail" name="email" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Email Address"></input>
+        <input id="assignAdminModalOrgId" name="org_id" type="hidden" value=""/>
+        <input style="margin: auto;" class="submit-button" type="submit" value="Send Email"/>
+        <br><br>
+    </form>
+  </div>
+</div>
+
+
+<div id="deleteOrgModal" class="modal">
+  <div class="modal-content">
+    <span onclick="closeModal('deleteOrgModal')" class="modal-close">&times;</span>
+    <h2 style="text-align: center;">
+        Delete Organisation
+    </h2>
+    <h3 id="deleteOrgModalText" style="text-align: center;"></h3>
+    <br>
+    <form style="text-align: center;" method="POST" action="{{delete_org_url}}">
+        <input id="deleteOrgModalConfirm" class="input-box" type="text" onkeyup="confirmOrgNameForDeletion()" style="width: 60%; margin-right: 20px;" placeholder="Confirm organisation name..."></input>
+        <input id="deleteOrgModalOrgId" name="org_id" type="hidden" value=""/>
+        <input id="deleteOrgModalOrgName" type="hidden" value=""/>
+        <input id="deleteOrgModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete Org"/>
         <br><br>
     </form>
   </div>

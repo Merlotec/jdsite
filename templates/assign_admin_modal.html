@@ -1,0 +1,24 @@
+<script>
+    function closeAssignModal() {
+        var input = document.getElementById("orgSearchInput");
+        var url = "{{{base_url}}}?search_text=" + encodeURIComponent(input.value);
+        window.location.href = url;
+    }
+</script>
+
+<div style="display: block;" id="assignAdminModal" class="modal">
+    <div class="modal-content">
+      <span onclick="closeAssignModal()" class="modal-close">&times;</span>
+      <h2 style="text-align: center;">
+          Assign Admin
+      </h2>
+      <h3 style="text-align: center;">To assign an admin to {{{org_name}}}, enter the email address to send the account creation link to:</h3>
+      <br>
+      <form style="text-align: center;" method="POST" action="{{{assign_admin_url}}}">
+          <input name="email" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Email Address"></input>
+          <input name="org_id" type="hidden" value="{{{org_id}}}"/>
+          <input style="margin: auto;" class="submit-button" type="submit" value="Send Email"/>
+          <br><br>
+      </form>
+    </div>
+  </div>

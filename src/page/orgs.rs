@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::str::FromStr;
 
 use actix_web::{
     web,
@@ -18,9 +19,20 @@ use crate::org;
 
 use actix_web::{get, post};
 
+#[get("/org/{org}")]
+pub async fn org_get(org: web::Path<String>) -> HttpResponse {
+    if let Ok(org_id) = org::OrgKey::from_str(&org) {
+        let mut r = HttpResponse::SeeOther();
+        r.header(http::header::LOCATION, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+        r.body("")
+    } else {
+        HttpResponse::new(http::StatusCode::BAD_REQUEST)
+            .set_body(Body::from("Invalid org_id"))
+    }
+}
 
 #[get("/orgs")]
-pub async fn org_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
+pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_view_orgs() {
@@ -33,18 +45,21 @@ pub async fn org_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Http
                                 admin_user.name()
                             } else {
                                 data.handlebars.render("assign_admin", &json!({
-                                    "org": org_id,
+                                    "org_id": org_id,
+                                    "org_name": &org.name,
                                 })).unwrap()
                             }
                         } else {
                             data.handlebars.render("assign_admin", &json!({
-                                "org": org_id,
+                                "org_id": org_id,
+                                "org_name": &org.name,
                             })).unwrap()
                         }
                     };
 
                     rows += &data.handlebars.render("org_row", &json!({
                         "org_url": dir::org_path(org_id),
+                        "org_id": org_id,
                         "admin": admin,
                         "name": org.name,
                         "unreviewed_sections": org.unreviewed_sections.len(),
@@ -54,9 +69,12 @@ pub async fn org_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Http
                     })).unwrap();
                 });
 
+            
                 let org_page = data.handlebars.render("org_list", &json!({
                     "org_rows": rows,
                     "add_org_url": dir::ADD_ORG_PATH,
+                    "assign_admin_url": dir::ASSIGN_ADMIN_PATH,
+                    "delete_org_url": dir::DELETE_ORG_PATH,
                 })).unwrap();
 
                 let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | Organisations", dir::APP_NAME.to_owned(), org_page).unwrap();
@@ -65,12 +83,10 @@ pub async fn org_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Http
                     .set_body(Body::from(body))
                 
             } else {
-                HttpResponse::new(http::StatusCode::UNAUTHORIZED)
-                    .set_body(Body::from(format!("Error: {}", "not authenticated")))
+                page::not_authorized_page(Some(ctx), &data)
             }
         },
-        Ok(None) => HttpResponse::new(http::StatusCode::UNAUTHORIZED)
-            .set_body(Body::from(format!("Error: {}", "not authenticated"))),
+        Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
             .set_body(Body::from(format!("Error: {}", e))),
@@ -101,14 +117,69 @@ pub async fn add_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, fo
                 }
                 
             } else {
-                HttpResponse::new(http::StatusCode::UNAUTHORIZED)
-                    .set_body(Body::from(format!("Error: {}", "not authenticated")))
+                page::not_authorized_page(Some(ctx), &data)
             }
         },
-        Ok(None) => HttpResponse::new(http::StatusCode::UNAUTHORIZED)
-            .set_body(Body::from(format!("Error: {}", "not authenticated"))),
+        Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
             .set_body(Body::from(format!("Error: {}", e))),
     }
 }
+
+#[derive(serde::Deserialize)]
+pub struct DeleteOrgForm {
+    org_id: org::OrgKey,
+}
+
+#[post("/del_org")]
+pub async fn delete_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<DeleteOrgForm>) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_delete_orgs() {
+                match data.org_db.remove_silent(&form.org_id) {
+                    Ok(_) => {
+                        let mut r = HttpResponse::SeeOther();
+                        r.header(http::header::LOCATION, dir::ORGS_PAGE);
+                        r.body("")
+                    },
+                    Err(e) =>  HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                        .set_body(Body::from(format!("Error: {}", e))),
+                } 
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        },
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}
+
+
+#[derive(serde::Deserialize)]
+pub struct AssignAdminForm {
+    email: String,
+    org_id: org::OrgKey,
+}
+
+#[post("/assign_admin")]
+pub async fn assign_admin_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AssignAdminForm>) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_view_orgs() {
+                let mut r = HttpResponse::SeeOther();
+                        r.header(http::header::LOCATION, dir::ORGS_PAGE);
+                        r.body("")
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        },
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}
+

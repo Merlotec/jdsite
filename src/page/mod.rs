@@ -1,9 +1,21 @@
 pub mod login;
 pub mod orgs;
+pub mod clients;
+
+use serde_json::json;
+use actix_web::{
+    HttpResponse,
+    HttpRequest,
+    cookie::Cookie,
+    body::Body,
+    http,
+};
 
 use crate::{
     auth::AuthContext,
     data::SharedData,
+    dir,
+    org,
 };
 
 use std::collections::HashMap;
@@ -21,23 +33,88 @@ pub fn render_page(ctx: Option<AuthContext>, data: &SharedData, title: String, h
         nav_string += &data.handlebars.render("nav_item", &nav_map)?;
     }
 
-    let mut map: HashMap<String, String> = HashMap::new();
-
-    let (user_string, user_class): (String, String) = {
+    let (user_string, user_class, auth_link, auth_action): (String, String, String, String) = {
         match ctx {
-            Some(ctx) => {
-                (ctx.user.forename.to_owned() + " " +  &ctx.user.surname, "user-string".to_owned())
-            },
-            None => ("Not Logged In".to_owned(), "no-user-string".to_owned()),
+            Some(ctx) => (
+                ctx.user.forename.to_owned() + " " +  &ctx.user.surname, 
+                "user-string".to_owned(),
+                dir::LOGOUT_PATH.to_owned(),
+                "Logout".to_owned(),
+            ),
+            None => (
+                "Not Logged In".to_owned(), 
+                "no-user-string".to_owned(),
+                dir::LOGIN_PAGE.to_owned(),
+                "Login".to_owned(),
+            ),
         }
     };
     
-    map.insert("page_title".to_owned(), title);
-    map.insert("page_heading".to_owned(), heading);
-    map.insert("page_user".to_owned(), user_string);
-    map.insert("page_user_class".to_owned(), user_class);
-    map.insert("page_nav".to_owned(), nav_string);
-    map.insert("page_body".to_owned(), body);
+    Ok(data.handlebars.render("page", &json!({
+        "page_title": title,
+        "page_heading": heading,
+        "page_user": user_string,
+        "page_user_class": user_class,
+        "page_auth_link": auth_link,
+        "page_auth_action": auth_action,
+        "page_nav": nav_string,
+        "page_body": body,
+    }))?)
+}
 
-    Ok(data.handlebars.render("page", &map)?)
+pub fn org_nav(ctx: &AuthContext, data: &SharedData, org_id: org::OrgKey, path: String) -> String {
+    let org_items = ctx.org_items(org_id);
+
+    let mut org_nav: String = String::new();
+
+    for (url, title) in org_items {
+        let nav_class: &str = {
+            if url == path {
+                "org-nav-item-selected"
+            } else {
+                "org-nav-item"
+            }
+        };
+
+        org_nav += &data.handlebars.render("org_nav_item", &json!({
+            "nav_title": title,
+            "nav_url": url,
+            "nav_item_class": nav_class,
+        })).unwrap()
+    }
+
+    org_nav
+}
+
+pub fn path_header(data: &SharedData, items: &[(String, String)]) -> String {
+    let mut header: String = String::new();
+
+    for (i, (url, title)) in items.iter().enumerate() {
+        if i != 0 {
+            header += " > ";
+        }
+
+        header += &data.handlebars.render("header_item", &json!({
+            "text": title,
+            "url": url,
+        })).unwrap();
+    }
+
+    return header;
+}
+
+pub fn not_authorized_page(ctx: Option<AuthContext>, data: &SharedData) -> HttpResponse {
+    let page_body: String = data.handlebars.render("not_authorized", &()).unwrap();
+
+    let body = render_page(ctx, data, dir::APP_NAME.to_owned() + " | Not Authorised", dir::APP_NAME.to_owned(), page_body).unwrap();
+
+    HttpResponse::new(http::StatusCode::UNAUTHORIZED)
+                .set_body(Body::from(body))
+}
+
+pub fn redirect_to_login(req: &HttpRequest) -> HttpResponse {
+    let mut r = HttpResponse::SeeOther();
+    r.cookie(Cookie::new(dir::LOGIN_REDIRECT_COOKIE, req.uri().to_string()));
+    r.header(http::header::LOCATION, dir::LOGIN_PAGE);
+    r.body("")
 }

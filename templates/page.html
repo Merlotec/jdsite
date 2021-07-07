@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-    <link rel="shortcut icon" href="assets/images/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://use.typekit.net/bgo1iyf.css">
+    <link rel="shortcut icon" href="/assets/images/logo.png" type="image/x-icon">
     <meta name="description" content="">
-  
+    <link rel="stylesheet" href="/assets/style.css">
   
   <title>{{page_title}}</title>
   
-  <link rel="stylesheet" href="assets/style.css">
+  
   
 </head>
 
@@ -20,7 +21,12 @@
     <nav class="navbar">
         <div class="container">
             <div class="navbar-brand">
-                {{{page_heading}}} <span class="divider"></span> <span class="{{{page_user_class}}}">{{{page_user}}}</span>
+                {{{page_heading}}} 
+                <div class="auth-section">
+                    <span class="{{{page_user_class}}}">{{{page_user}}}</span>
+                    <span class="divider"></span>
+                    <a class="auth-button" href="{{{page_auth_link}}}">{{{page_auth_action}}}</a>
+                </div>
             </div>
             <div class="navbar-right">
                 <ul class="nav-list" data-app-modern-menu="true">

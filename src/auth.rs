@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 use crate::user::{User, UserKey, UserAgent};
-use crate::{db, dir, define_uuid_key};
+use crate::{db, dir, define_uuid_key, org};
 use std::time::{SystemTime, Duration};
 use std::path::Path;
 
@@ -47,14 +47,18 @@ impl AuthManager {
         Ok(token)
     }
 
+    pub fn destroy_session(&self, token: &AuthToken) -> sled::Result<()> {
+        self.db().remove_silent(token)
+    }
+
     pub fn check_token(&self, token: &AuthToken, push_expiry: bool) -> Result<Option<UserKey>, db::Error> {
         let session = self.db().fetch(token)?;
         match session {
             Some(mut s) => {
                 if s.expiry > SystemTime::now() {
                     if push_expiry {
-                        s.expiry += s.timeout;
-                        // Attempt to push back timeout.
+                        s.expiry = SystemTime::now() + s.timeout;
+                        // Attempt to insert updated entry.
                         let _ = self.db.insert(token, &s);
                     }
                     Ok(Some(s.user_id))
@@ -97,5 +101,13 @@ impl AuthContext {
             UserAgent::Associate(org_id) => dir::org_path(org_id),
             UserAgent::Client(org_id) => dir::client_path(org_id, self.user_id),
         }
+    }
+
+    pub fn org_items(&self, org_id: org::OrgKey) -> Vec<(String, String)> {
+        vec![
+            (dir::org_path(org_id) + dir::CLIENTS_PAGE, "Pupils".to_owned()),
+            (dir::org_path(org_id) + dir::ASSOCIATES_PAGE, "Teachers".to_owned()),
+            (dir::org_path(org_id) + dir::UNREVIEWED_SECTIONS_PAGE, "Unreviewed Sections".to_owned()),
+        ]
     }
 }
