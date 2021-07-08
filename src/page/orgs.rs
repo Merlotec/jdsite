@@ -75,6 +75,7 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                     "add_org_url": dir::ADD_ORG_PATH,
                     "assign_admin_url": dir::ASSIGN_ADMIN_PATH,
                     "delete_org_url": dir::DELETE_ORG_PATH,
+                    "add_credits_url": dir::ADD_CREDITS_PATH,
                 })).unwrap();
 
                 let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | Organisations", dir::APP_NAME.to_owned(), org_page).unwrap();
@@ -188,3 +189,43 @@ pub async fn assign_admin_post(data: web::Data<Arc<SharedData>>, req: HttpReques
     }
 }
 
+#[derive(serde::Deserialize)]
+pub struct AddCreditsForm {
+    credits_count: u32,
+    org_id: org::OrgKey,
+}
+
+#[post("/add_credits")]
+pub async fn add_credits_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AddCreditsForm>) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_view_orgs() {
+                match data.org_db.fetch(&form.org_id) {
+                    Ok(Some(mut org)) => {
+                        org.credits += form.credits_count;
+
+                        match data.org_db.insert(&form.org_id, &org) {
+                            Ok(_) => {
+                                let mut r = HttpResponse::SeeOther();
+                                r.header(http::header::LOCATION, dir::ORGS_PAGE);
+                                r.body("")
+                            },
+                            _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                .set_body(Body::from("Could not reinsert org!")),
+                        }
+                    },
+                    _ => HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                        .set_body(Body::from("Invalid org id!")),
+                }
+
+                
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        },
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}

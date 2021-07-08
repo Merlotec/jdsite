@@ -2,6 +2,9 @@ pub mod login;
 pub mod orgs;
 pub mod clients;
 pub mod user;
+pub mod associates;
+
+use std::sync::Arc;
 
 use serde_json::json;
 use actix_web::{
@@ -10,6 +13,8 @@ use actix_web::{
     cookie::Cookie,
     body::Body,
     http,
+    web,
+    get,
 };
 
 use crate::{
@@ -18,6 +23,7 @@ use crate::{
     dir,
     org,
 };
+
 
 use std::collections::HashMap;
 
@@ -121,4 +127,19 @@ pub fn redirect_to_login(req: &HttpRequest) -> HttpResponse {
     r.cookie(Cookie::new(dir::LOGIN_REDIRECT_COOKIE, req.uri().to_string()));
     r.header(http::header::LOCATION, dir::LOGIN_PAGE);
     r.body("")
+}
+
+#[get("/")]
+pub async fn root_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            let mut r = HttpResponse::SeeOther();
+            r.header(http::header::LOCATION, ctx.root_page());
+            r.body("")
+        },
+        Ok(None) => redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
 }

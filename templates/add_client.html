@@ -1,0 +1,38 @@
+<div class="inner-nav-section">
+    <a class="back-button" href="{{back_url}}">
+        &lt;
+    </a>
+    <span class="inner-header" style="display: inline-block;">
+        Add Pupil
+    </span>
+</div>
+
+<div class="center-content">
+    <h3 style="text-align: center;">Once the pupil is registered, an email will be sent to the specified email address with a password creation link.</h3>
+    <p class="err-text">{{err_msg}}</p>
+    <form class="center-form" method="POST" action="{{add_client_url}}">
+        <div class="adjacent-input-section" style="padding-right: 5px;">
+            <span class="input-item-title">Forename</span>
+            <br>
+            <input id="addClientName" name="forename" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Forename"></input>
+        </div>
+
+        <div class="adjacent-input-section" style="padding-left: 5px">
+            <span class="input-item-title">Surname</span>
+            <br>
+            <input id="addClientName" name="surname" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Surname"></input>
+        </div>
+
+        <br><br>
+        <span class="input-item-title">Email</span>
+        <br>
+        <input id="addClientEmail" name="email" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Email"></input>
+        <br><br>
+        <span class="input-item-title">Class</span>
+        <br>
+        <input id="addClientClass" name="class" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Class"></input>
+        <br><br><br>
+        <input id="addClientSubmit" style="margin: auto;" class="submit-button" type="submit" value="Add Pupil"/>
+        <br><br>
+    </form>
+</div>

@@ -7,6 +7,8 @@ use std::sync::Arc;
 #[macro_use]
 pub mod db;
 
+pub mod util;
+
 pub mod dir;
 
 pub mod form;
@@ -35,24 +37,19 @@ async fn static_file(req: HttpRequest) -> Result<NamedFile> {
     }
 }
 
-async fn root(_req: HttpRequest) -> impl Responder {
-    let mut r = HttpResponse::PermanentRedirect();
-    r.header(http::header::LOCATION, "/home.html");
-    
-    r.await
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let data: Arc<SharedData> = Arc::new(SharedData::load_from_disk("root".to_string()).expect("Failed to load database data!"));
+    
+    
     /*
-    data.create_user("ncbmknight@gmail.com", "Nemisite", &user::User {
+    data.register_user(&user::User {
         email: "ncbmknight@gmail.com".to_owned(),
         forename: "Brodie".to_owned(),
         surname: "Knight".to_owned(),
         user_agent: user::UserAgent::Owner,
-    }).expect("Failed to create user!");
-*/
+    }, "Nemisite", false);
+    */
 
     std::thread::spawn(|| {
         loop {
@@ -81,6 +78,7 @@ async fn main() -> std::io::Result<()> {
             .data(data.clone())
             //User
             .service(page::user::user_get)
+            .service(page::user::delete_user_post)
             // Login
             .service(page::login::login_get)
             .service(page::login::login_post)
@@ -91,13 +89,20 @@ async fn main() -> std::io::Result<()> {
             .service(page::orgs::add_org_post)
             .service(page::orgs::delete_org_post)
             .service(page::orgs::assign_admin_post)
+            .service(page::orgs::add_credits_post)
             // Clients
             .service(page::clients::clients_get)
+            .service(page::clients::add_client_get)
+            .service(page::clients::add_client_post)
+            // Associates
+            .service(page::associates::associates_get)
+            .service(page::associates::add_associate_get)
+            .service(page::associates::add_associate_post)
             // Root
-            .route("/", web::get().to(root))
+            .service(page::root_get)
             // Static files
             .route("/{filename:.*}", web::get().to(static_file))
-            .service(Files::new("/", "static").index_file("index.html"))
+            //.service(Files::new("/", "static").index_file("index.html"))
             
     })
         .bind("0.0.0.0:80")?

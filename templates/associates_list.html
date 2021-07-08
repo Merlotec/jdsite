@@ -1,0 +1,94 @@
+<script>
+    function searchAssociates() {
+      // Declare variables
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("associateSearchInput");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("associateTable");
+      tr = table.getElementsByTagName("tr");
+    
+      // Loop through all table rows, and hide those who don't match the search query
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+          txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+
+    function showModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "block";
+    }
+
+    function closeModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "none";
+    }
+
+    function registerModal(id) {
+        var modal = document.getElementById(id);
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    }
+
+    function showDeleteAssociateModal(userId, associateName) {
+        var text = document.getElementById('deleteAssociateModalText');
+        text.innerText = 'Account Name: ' + associateName;
+
+        var userIdInput = document.getElementById('deleteAssociateModalUserId');
+        userIdInput.value = userId;
+
+        showModal('deleteAssociateModal');
+    }
+
+  </script>
+  
+  <div class="container">
+      <div class="center-content">
+          <br>
+          <h3 style="text-align: center;">
+            Below is the list of teacher accounts associated with this organisation.
+            Teachers can view student accounts, and mark submitted sections.
+            </h3>
+          <div class="table-content">        
+            <input type="text" class="input-box" id="associateSearchInput" style="float:center; margin-right: 20px;" onkeyup="searchAssociates()" placeholder="Search teachers..."/>
+  
+            <button {{{hide_add_associate}}} title="Add Teacher" class="submit-button" style="float: center;" onclick="window.location.href='{{add_associate_url}}'">Add Teacher</button>
+            <br><br>
+            <table class="user-table" id="associateTable">
+              <tr class="table-header">
+                  <th style="width:50%;">Teacher Name</th>
+                  <th style="width:45%;">Email</th>
+                  <th style="width:5%;"></th>
+              </tr>
+              {{{associate_rows}}}
+            </table>
+          </div>
+      </div>
+  </div>
+
+  <div id="deleteAssociateModal" class="modal">
+    <div class="modal-content">
+      <span onclick="closeModal('deleteAssociateModal')" class="modal-close">&times;</span>
+      <h2 style="text-align: center;">
+          Delete Teacher Account
+      </h2>
+      <h3 id="deleteAssociateModalText" style="text-align: center;"></h3>
+      <br>
+      <form style="text-align: center;" method="POST" action="{{delete_user_url}}">
+          <input id="deleteAssociateModalUserId" name="user_id" type="hidden" value=""></input>
+          <input id="deleteAssociateModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete"/>
+          <br><br>
+      </form>
+    </div>
+  </div>

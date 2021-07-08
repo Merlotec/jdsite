@@ -142,6 +142,10 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
         }
     }
 
+    pub fn contains_key(&self, key: &K) -> sled::Result<bool> {
+        self.db.contains_key(key)
+    }
+
     /// Executes f for each value that can be deserialized in the database.
     pub fn for_each_val<F>(&self, mut f: F)
     where F: FnMut(V) {

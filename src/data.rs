@@ -96,25 +96,101 @@ impl SharedData {
         }
     }
 
-    pub fn create_user(&self, username: &str, password: &str, user: &User) -> Result<(), login::LoginEntryError> {
-        let user_id = UserKey::generate();
-        match self.user_db.insert(&user_id, user) {
-            Ok(_) => {
-                let login_entry = login::LoginEntry {
-                    user_id,
-                    password: password.to_owned(),
-                };
-        
-                match self.login_db.add_entry(username, &login_entry) {
-                    Ok(_) => Ok(()),
-                    Err(e) => {
-                        let _ = self.user_db.remove_silent(&user_id);
-                        Err(e)
-                    },
+    pub fn register_user(&self, user: &User, password: &str, default_password: bool) -> Result<UserKey, login::LoginEntryError> {
+        match self.login_db.db().contains_key(&user.email) {
+            Ok(exists) => {
+                if !exists {
+                    let user_id = UserKey::generate();
+                    match self.user_db.insert(&user_id, user) {
+                        Ok(_) => {
+
+                            let login_entry = login::LoginEntry {
+                                user_id,
+                                password: password.to_owned(),
+                                default_password,
+                            };
+
+                            match self.login_db.add_entry(&user.email, &login_entry) {
+                                Ok(_) => {
+                                    match user.user_agent {
+                                        UserAgent::Client { org_id, .. } => {
+                                            if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                                                if !org.clients.contains(&user_id) && org.credits > 0 {
+                                                    org.clients.push(user_id);
+                                                    org.credits -= 1;
+                                                    if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                                        println!("Failed to update org db for new client! {}", e);
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        UserAgent::Associate(org_id) => {
+                                            if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                                                if !org.associates.contains(&user_id) {
+                                                    org.associates.push(user_id);
+                                                    if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                                        println!("Failed to update org db for new associate! {}", e);
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        _ => {},
+                                    }
+                                    Ok(user_id)
+                                },
+                                Err(e) => {
+                                    let _ = self.user_db.remove_silent(&user_id);
+                                    Err(e)
+                                },
+                            }
+                        },
+            
+                        Err(e) => Err(login::LoginEntryError::DbError(e)),
+                    }
+                } else {
+                    Err(login::LoginEntryError::UsernameExists)
                 }
             },
+            Err(e) => Err(login::LoginEntryError::DbError(db::Error::DbError(e))),
+        }
 
-            Err(e) => Err(login::LoginEntryError::DbError(e)),
+        
+    }
+
+    pub fn delete_user(&self, user_id: &UserKey) -> Result<(), db::Error> {
+        match self.user_db.remove(user_id) {
+            Ok(Some(user)) => {
+                if let Err(e) = self.login_db.db().remove_silent(&user.email) {
+                    println!("Failed to delete login entry! {}", e);
+                }
+                match user.user_agent {
+                    UserAgent::Client { org_id, .. } => {
+                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                            if !org.clients.contains(&user_id) && org.credits > 0 {
+                                org.clients.retain(|x| x != user_id);
+                                if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                    println!("Failed to update org db for new client! {}", e);
+                                }
+                            }
+                        }
+                    },
+                    UserAgent::Associate(org_id) => {
+                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                            if !org.associates.contains(&user_id) {
+                                org.associates.retain(|x| x != user_id);
+                                if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                    println!("Failed to update org db for new associate! {}", e);
+                                }
+                            }
+                        }
+                    },
+                    _ => {},
+                }
+                Ok(())
+            },
+            Ok(None) => Ok(()),
+            Err(e) => Err(e),
+
         }
     }
 

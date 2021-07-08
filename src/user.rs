@@ -19,7 +19,7 @@ impl User {
 }
 
 /// Contains all the different types of user.
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum UserAgent {
     Owner,
     Admin,
@@ -27,6 +27,7 @@ pub enum UserAgent {
     Associate(OrgKey),
     Client {
         org_id: OrgKey,
+        class: String,
         sections: [Option<SectionKey>; 6],
     },
 }
@@ -58,6 +59,26 @@ impl UserAgent {
         }
     }
 
+    pub fn can_add_associate(&self, org_id: &OrgKey) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            UserAgent::Orginisation(agent_org_id) => agent_org_id == org_id,
+            UserAgent::Associate(_) => false,
+            UserAgent::Client { .. } => false,
+        }
+    }
+
+    pub fn can_delete_user(&self, other: &UserAgent) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => other != &UserAgent::Owner && other != &UserAgent::Admin,
+            UserAgent::Orginisation(agent_org_id) => other.org_id() == Some(*agent_org_id),
+            UserAgent::Associate(_) => false,
+            UserAgent::Client { .. } => false,
+        }
+    }
+
     pub fn agent_string(&self) -> String {
         match self {
             UserAgent::Owner => "Owner".to_owned(),
@@ -69,12 +90,12 @@ impl UserAgent {
     }
 
     pub fn org_id(&self) -> Option<OrgKey> {
-        match *self {
+        match self {
             UserAgent::Owner => None,
             UserAgent::Admin => None,
-            UserAgent::Orginisation(org_id) => Some(org_id),
-            UserAgent::Associate(org_id) => Some(org_id),
-            UserAgent::Client { org_id, .. } => Some(org_id),
+            UserAgent::Orginisation(org_id) => Some(*org_id),
+            UserAgent::Associate(org_id) => Some(*org_id),
+            UserAgent::Client { org_id, .. } => Some(*org_id),
         }
     }
 

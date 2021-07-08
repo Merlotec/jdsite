@@ -4,7 +4,7 @@
     var input, filter, table, tr, td, i, txtValue;
     input = document.getElementById("orgSearchInput");
     filter = input.value.toUpperCase();
-    table = document.getElementById("org_table");
+    table = document.getElementById("orgTable");
     tr = table.getElementsByTagName("tr");
   
     // Loop through all table rows, and hide those who don't match the search query
@@ -83,6 +83,28 @@
     }
   }
 
+  function validateNumber(numberText, submitButton) {
+    if (numberText.value == null || numberText.value.trim().length == 0 || isNaN(parseInt(numberText.value))) {
+      submitButton.disabled = true;
+      submitButton.className = 'submit-button-disabled';
+    } else {
+      submitButton.disabled = false;
+      submitButton.className = 'submit-button';
+    }
+  }
+
+  function showAddCreditsModal(orgId, orgName) {
+    var text = document.getElementById('addCreditsModalText');
+    text.innerText = "Enter the number of pupil credits you would like to add to " + orgName + ":";
+
+    var orgIdInput = document.getElementById('addCreditsModalOrgId');
+    orgIdInput.value = orgId;
+
+    validateNumber(document.getElementById('addCreditsModalCount'), document.getElementById('addCreditsModalSubmit'));
+
+    showModal('addCreditsModal');
+  }
+
   function showDeleteOrgModal(orgId, orgName) {
     var text = document.getElementById('deleteOrgModalText');
     text.innerHTML = 'Once an organisation has been deleted it cannot be recovered - all associated data will be lost. To delete <b style=\"color:white;\"">' + orgName + '</b> please enter the name of the organisation exactly as seen in bold:';
@@ -96,14 +118,12 @@
     var textInput = document.getElementById('deleteOrgModalConfirm');
     textInput.value = "";
 
-    var button = document.getElementById('deleteOrgModalSubmit');
-    button.disabled = true;
-
     confirmOrgNameForDeletion();
     validateOrgName();
 
     showModal('deleteOrgModal');
   }
+
 
   
 
@@ -123,7 +143,7 @@
 
           <button title="Add Organisation" class="submit-button" style="float: center;" onclick="validateOrgName(); showModal('addOrgModal')">Add Organisation</button>
           <br><br>
-          <table class="content-table" id="org_table">
+          <table class="content-table" id="orgTable">
             <tr class="table-header">
                 <th style="width:30%;">Organisation Name</th>
                 <th style="width:25%;">Admin</th>
@@ -188,6 +208,24 @@
         <input id="deleteOrgModalOrgId" name="org_id" type="hidden" value=""/>
         <input id="deleteOrgModalOrgName" type="hidden" value=""/>
         <input id="deleteOrgModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete"/>
+        <br><br>
+    </form>
+  </div>
+</div>
+
+
+<div id="addCreditsModal" class="modal">
+  <div class="modal-content">
+    <span onclick="closeModal('addCreditsModal')" class="modal-close">&times;</span>
+    <h2 style="text-align: center;">
+        Add Credits
+    </h2>
+    <h3 id="addCreditsModalText" style="text-align: center;"></h3>
+    <br>
+    <form style="text-align: center;" method="POST" action="{{add_credits_url}}">
+        <input id="addCreditsModalCount" name="credits_count" class="input-box" type="text" onkeyup="validateNumber(document.getElementById('addCreditsModalCount'), document.getElementById('addCreditsModalSubmit'))" style="width: 90px; margin-right: 20px;" placeholder="Credits..."></input>
+        <input id="addCreditsModalOrgId" name="org_id" type="hidden" value=""/>
+        <input id="addCreditsModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Add Credits"/>
         <br><br>
     </form>
   </div>

@@ -1,16 +1,39 @@
-
-
+<script>
+  function searchClients() {
+    // Declare variables
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.getElementById("clientSearchInput");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("clientTable");
+    tr = table.getElementsByTagName("tr");
+  
+    // Loop through all table rows, and hide those who don't match the search query
+    for (i = 0; i < tr.length; i++) {
+      td = tr[i].getElementsByTagName("td")[0];
+      if (td) {
+        txtValue = td.textContent || td.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
+        }
+      }
+    }
+  }
+</script>
 
 <div class="container">
     <div class="center-content">
         <br>
         <h3 style="text-align: center;">Below is the list of pupil accounts signed up to senior duke:</h3>
         <div class="table-content">        
-          <input type="text" class="input-box" id="orgSearchInput" style="float:center; margin-right: 20px;" onkeyup="searchOrgs()" placeholder="Search pupils..."/>
+          <input type="text" class="input-box" id="clientSearchInput" style="float:center; margin-right: 20px;" onkeyup="searchClients()" placeholder="Search pupils..."/>
 
-          <button title="Add Organisation" class="submit-button" style="float: center;" onclick="validateOrgName(); showModal('addOrgModal')">Add Pupil</button>
+          <div class="bubble">
+            Pupil Credits: <b>{{credits}}</b> {{{add_client_button}}}
+          </div>
           <br><br>
-          <table class="client-table" id="org_table">
+          <table class="user-table" id="clientTable">
             <tr class="table-header">
                 <th style="width:40%;">Pupil Name</th>
                 <th style="width:35%;">Email</th>

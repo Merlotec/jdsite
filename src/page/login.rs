@@ -67,7 +67,13 @@ pub async fn login_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form
 
                         let mut r = HttpResponse::SeeOther();
                         r.cookie(auth_cookie);
-                        r.header(http::header::LOCATION, ctx.root_page());
+                        
+                        if let Some(redirect) = req.cookie(dir::LOGIN_REDIRECT_COOKIE) {
+                            r.header(http::header::LOCATION, redirect.value());
+                        } else {
+                            r.header(http::header::LOCATION, ctx.root_page());
+                        }
+                        
                         r.body("")
                     },
                     Err(login::AuthError::IncorrectPassword) => login_template(ctx, &data, "Incorrect username and password combination".to_owned()),

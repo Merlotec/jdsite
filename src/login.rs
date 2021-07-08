@@ -8,6 +8,7 @@ use serde::{Serialize, Deserialize};
 pub struct LoginEntry {
     pub password: String,
     pub user_id: UserKey,
+    pub default_password: bool,
 }
 
 #[derive(Debug)]

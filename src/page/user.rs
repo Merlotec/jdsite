@@ -18,7 +18,7 @@ use crate::dir;
 use crate::org;
 use crate::user;
 
-use actix_web::get;
+use actix_web::{get, post};
 
 #[get("/user/{user}")]
 pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_id_str: web::Path<String>) -> HttpResponse {
@@ -60,6 +60,17 @@ pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_i
                                 }
                             }
 
+                            if let Ok(Some(entry)) = data.login_db.db().fetch(&user.email) {
+                                if entry.default_password {
+                                    attrs += "<br><br>";
+                                    attrs += &data.handlebars.render("user_attribute", &json!({
+                                        "attribute_name": "Password (Auto-Generated)",
+                                        "attribute_value": entry.password,
+                                    })).unwrap();
+                                }
+                                
+                            }
+
                             let page_body = data.handlebars.render("user", &json!({
                                 "name": user.name(),
                                 "attributes": attrs,
@@ -87,5 +98,44 @@ pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_i
     } else {
         HttpResponse::new(http::StatusCode::BAD_REQUEST)
             .set_body(Body::from("Invalid org_id"))
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct DeleteUserForm {
+    user_id: user::UserKey,
+}
+
+#[post("/delete_user")]
+pub async fn delete_user_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<DeleteUserForm>) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            match data.user_db.fetch(&form.user_id) {
+                Ok(Some(target)) => {
+                    if ctx.user.user_agent.can_delete_user(&target.user_agent) {
+                        match data.delete_user(&form.user_id) {
+                            Ok(_) => {
+                                let mut r = HttpResponse::SeeOther();        
+                                if let Some(referer) = req.headers().get("Referer") {
+                                    r.header(http::header::LOCATION, referer.clone());
+                                }
+                                r.body("")
+                            },
+                            Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                            .set_body(Body::from("Failed to delete user!")),
+                        }
+                        
+                    } else {
+                        page::not_authorized_page(Some(ctx), &data)
+                    }
+                },
+                _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .set_body(Body::from("Failed to get user!")),
+            }
+        },
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
     }
 }
