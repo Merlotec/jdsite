@@ -45,20 +45,20 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                             if let Ok(Some(admin_user)) = data.user_db.fetch(&user_id) {
                                 admin_user.name()
                             } else {
-                                data.handlebars.render("assign_admin", &json!({
+                                data.handlebars.render("org/assign_admin", &json!({
                                     "org_id": org_id,
                                     "org_name": &org.name,
                                 })).unwrap()
                             }
                         } else {
-                            data.handlebars.render("assign_admin", &json!({
+                            data.handlebars.render("org/assign_admin", &json!({
                                 "org_id": org_id,
                                 "org_name": &org.name,
                             })).unwrap()
                         }
                     };
 
-                    rows += &data.handlebars.render("org_row", &json!({
+                    rows += &data.handlebars.render("org/org_row", &json!({
                         "org_url": dir::org_path(org_id),
                         "org_id": org_id,
                         "admin": admin,
@@ -71,7 +71,7 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                 });
 
             
-                let org_page = data.handlebars.render("org_list", &json!({
+                let org_page = data.handlebars.render("org/org_list", &json!({
                     "org_rows": rows,
                     "add_org_url": dir::ADD_ORG_PATH,
                     "assign_admin_url": dir::ASSIGN_ADMIN_PATH,

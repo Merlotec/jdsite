@@ -415,14 +415,14 @@ a {
 .attribute-name {
     color: white;
     font-weight: bold;
-    font-size: 15px;
+    font-size: 16px;
 
 }
 
 .attribute-value {
     color: rgb(175, 175, 175);
     font-weight: normal;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 .input-item-title {
@@ -503,4 +503,36 @@ a {
     border-radius: 5px;
     border: 1px solid rgb(82, 80, 97);
     display: inline-block;
+}
+
+.section-bubble {
+    text-align: center;
+    padding: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgb(43, 42, 56);
+    color: rgb(175, 175, 175);
+    border-radius: 5px;
+    border: 1px solid rgb(82, 80, 97);
+    box-sizing: border-box;
+
+    width: 200px;
+    height: 200px;
+
+    display: inline-block;
+}
+
+.section-bubble-image {
+    float: center;
+    width: 70px;
+    height: 70px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.section-title {
+    font-size: 20px;
+    color: white;
 }

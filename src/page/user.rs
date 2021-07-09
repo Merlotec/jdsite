@@ -39,13 +39,13 @@ pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_i
                             
                             let mut attrs: String = String::new();
 
-                            attrs += &data.handlebars.render("user_attribute", &json!({
+                            attrs += &data.handlebars.render("user/user_attribute", &json!({
                                 "attribute_name": "Email",
                                 "attribute_value": user.email,
                             })).unwrap();
 
                             attrs += "<br><br>";
-                            attrs += &data.handlebars.render("user_attribute", &json!({
+                            attrs += &data.handlebars.render("user/user_attribute", &json!({
                                 "attribute_name": "Account Type",
                                 "attribute_value": user.user_agent.agent_string(),
                             })).unwrap();
@@ -53,7 +53,7 @@ pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_i
                             if let Some(org_id) = user.user_agent.org_id() {
                                 if let Ok(Some(org)) = data.org_db.fetch(&org_id) {
                                     attrs += "<br><br>";
-                                    attrs += &data.handlebars.render("user_attribute", &json!({
+                                    attrs += &data.handlebars.render("user/user_attribute", &json!({
                                         "attribute_name": "Organisation",
                                         "attribute_value": org.name,
                                     })).unwrap();
@@ -63,7 +63,7 @@ pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_i
                             if let Ok(Some(entry)) = data.login_db.db().fetch(&user.email) {
                                 if entry.default_password {
                                     attrs += "<br><br>";
-                                    attrs += &data.handlebars.render("user_attribute", &json!({
+                                    attrs += &data.handlebars.render("user/user_attribute", &json!({
                                         "attribute_name": "Password (Auto-Generated)",
                                         "attribute_value": entry.password,
                                     })).unwrap();
@@ -71,7 +71,7 @@ pub async fn user_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, user_i
                                 
                             }
 
-                            let page_body = data.handlebars.render("user", &json!({
+                            let page_body = data.handlebars.render("user/user", &json!({
                                 "name": user.name(),
                                 "attributes": attrs,
                             })).unwrap();

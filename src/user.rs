@@ -79,6 +79,16 @@ impl UserAgent {
         }
     }
 
+    pub fn can_view_user(&self, other: &UserAgent) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => other != &UserAgent::Owner && other != &UserAgent::Admin,
+            UserAgent::Orginisation(agent_org_id) => other.org_id() == Some(*agent_org_id),
+            UserAgent::Associate(agent_org_id) => other.org_id() == Some(*agent_org_id),
+            UserAgent::Client { .. } => false,
+        }
+    }
+
     pub fn agent_string(&self) -> String {
         match self {
             UserAgent::Owner => "Owner".to_owned(),

@@ -37,7 +37,7 @@ pub fn render_page(ctx: Option<AuthContext>, data: &SharedData, title: String, h
         let mut nav_map: HashMap<String, String> = HashMap::new();
         nav_map.insert("nav_url".to_owned(), url);
         nav_map.insert("nav_title".to_owned(), title);
-        nav_string += &data.handlebars.render("nav_item", &nav_map)?;
+        nav_string += &data.handlebars.render("shared/nav_item", &nav_map)?;
     }
 
     let (user_string, user_class, user_link, auth_link, auth_action): (String, String, String, String, String) = {
@@ -59,7 +59,7 @@ pub fn render_page(ctx: Option<AuthContext>, data: &SharedData, title: String, h
         }
     };
     
-    Ok(data.handlebars.render("page", &json!({
+    Ok(data.handlebars.render("shared/page", &json!({
         "page_title": title,
         "page_heading": heading,
         "page_user": user_string,
@@ -86,7 +86,7 @@ pub fn org_nav(ctx: &AuthContext, data: &SharedData, org_id: org::OrgKey, path: 
             }
         };
 
-        org_nav += &data.handlebars.render("org_nav_item", &json!({
+        org_nav += &data.handlebars.render("org/org_nav_item", &json!({
             "nav_title": title,
             "nav_url": url,
             "nav_item_class": nav_class,
@@ -104,7 +104,7 @@ pub fn path_header(data: &SharedData, items: &[(String, String)]) -> String {
             header += " > ";
         }
 
-        header += &data.handlebars.render("header_item", &json!({
+        header += &data.handlebars.render("shared/header_item", &json!({
             "text": title,
             "url": url,
         })).unwrap();

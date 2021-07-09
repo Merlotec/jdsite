@@ -37,7 +37,7 @@ pub async fn login_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Ht
 }
 
 pub fn login_template(ctx: Option<AuthContext>, data: &SharedData, msg: String) -> HttpResponse {
-    let login_body: String = data.handlebars.render("login", &json!({
+    let login_body: String = data.handlebars.render("login/login", &json!({
         "login_err_msg": msg,
         "login_url": dir::LOGIN_POST_PATH,
     })).unwrap();
@@ -117,7 +117,7 @@ pub fn change_password_page(ctx: Option<AuthContext>, data: &SharedData, token: 
             if let link::Link::ChangePassword(user_id) = entry.link {
                 match data.user_db.fetch(&user_id) {
                     Ok(Some(user)) => {
-                        let body: String = data.handlebars.render("change_password", &json!({
+                        let body: String = data.handlebars.render("login/change_password", &json!({
                             "err_msg": msg,
                             "email": user.email,
                             "change_password_url": dir::CHANGE_PASSWORD_PATH.to_owned() + "/" + &token.to_string(),

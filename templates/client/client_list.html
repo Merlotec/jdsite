@@ -20,6 +20,37 @@
       }
     }
   }
+
+  
+  function showModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "block";
+    }
+
+    function closeModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "none";
+    }
+
+    function registerModal(id) {
+        var modal = document.getElementById(id);
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    }
+
+    function showDeleteClientModal(userId, clientName) {
+        var text = document.getElementById('deleteClientModalTitle');
+        text.innerText = 'Delete ' + clientName;
+
+        var userIdInput = document.getElementById('deleteClientModalUserId');
+        userIdInput.value = userId;
+
+        showModal('deleteClientModal');
+    }
 </script>
 
 <div class="container">
@@ -45,4 +76,23 @@
           </table>
         </div>
     </div>
+</div>
+
+
+<div id="deleteClientModal" class="modal">
+  <div class="modal-content">
+    <span onclick="closeModal('deleteClientModal')" class="modal-close">&times;</span>
+    <h2 id="deleteClientModalTitle" style="text-align: center;">
+    </h2>
+    <h3 style="text-align: center;">
+      Are you sure you want to delete this account? Deleted accounts cannot be recovered. 
+      As long as the pupil has not completed their reward the pupil credit will be refunded.
+    </h3>
+    <br>
+    <form style="text-align: center;" method="POST" action="{{delete_user_url}}">
+        <input id="deleteClientModalUserId" name="user_id" type="hidden" value=""></input>
+        <input id="deleteClientModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete"/>
+        <br><br>
+    </form>
+  </div>
 </div>

@@ -172,6 +172,7 @@ impl SharedData {
                     UserAgent::Client { org_id, .. } => {
                         if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
                             org.clients.retain(|x| x != user_id);
+                            org.credits += 1;
                             if let Err(e) = self.org_db.insert(&org_id, &org) {
                                 println!("Failed to update org db for new client! {}", e);
                             }

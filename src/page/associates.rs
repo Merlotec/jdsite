@@ -46,7 +46,7 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                             };
                                             
                                             if associate_org_id == org_id {
-                                                rows += &data.handlebars.render("associate_row", &json!({
+                                                rows += &data.handlebars.render("associate/associate_row", &json!({
                                                     "user_url": dir::user_path(*user_id),
                                                     "name": user.name(),
                                                     "email": user.email,
@@ -68,7 +68,7 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                 }
                             };
 
-                            let content = data.handlebars.render("associates_list", &json!({
+                            let content = data.handlebars.render("associate/associates_list", &json!({
                                 "hide_add_associate": hide_add_associate,
                                 "add_associate_url": dir::org_path(org_id) + dir::ADD_ASSOCIATE_PATH,
                                 "delete_user_url": dir::DELETE_USER_PATH.to_owned(),
@@ -82,7 +82,7 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
 
                             let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
 
-                            let org_page = data.handlebars.render("org_root", &json!({
+                            let org_page = data.handlebars.render("org/org_root", &json!({
                                 "header": header,
                                 "org_nav": nav,
                                 "body": content,
@@ -123,7 +123,7 @@ pub fn add_associate_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, or
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
     
-                            let content = data.handlebars.render("add_associate", &json!({
+                            let content = data.handlebars.render("associate/add_associate", &json!({
                                 "back_url": dir::org_path(org_id) + dir::ASSOCIATES_PAGE,
                                 "add_associate_url": dir::org_path(org_id) + dir::ADD_ASSOCIATE_PATH,
                                 "err_msg": err_msg,
@@ -136,7 +136,7 @@ pub fn add_associate_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, or
 
                             let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
 
-                            let org_page = data.handlebars.render("org_root", &json!({
+                            let org_page = data.handlebars.render("org/org_root", &json!({
                                 "header": header,
                                 "org_nav": nav,
                                 "body": content,
@@ -208,18 +208,18 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
                                     Ok(_) => {
                                         let mut attrs: String = String::new();
 
-                                        attrs += &data.handlebars.render("user_attribute", &json!({
+                                        attrs += &data.handlebars.render("user/user_attribute", &json!({
                                             "attribute_name": "Username",
                                             "attribute_value": user.email,
                                         })).unwrap();
             
                                         attrs += "<br><br>";
-                                        attrs += &data.handlebars.render("user_attribute", &json!({
+                                        attrs += &data.handlebars.render("user/user_attribute", &json!({
                                             "attribute_name": "Password",
                                             "attribute_value": password,
                                         })).unwrap();
 
-                                        let content = data.handlebars.render("associate_added", &json!({
+                                        let content = data.handlebars.render("associate/associate_added", &json!({
                                             "back_url": dir::org_path(org_id) + dir::ASSOCIATES_PAGE,
                                             "add_associate_url": dir::org_path(org_id) + dir::ADD_ASSOCIATE_PATH,
                                             "attributes": attrs,
@@ -232,7 +232,7 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
             
                                         let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::CLIENTS_PAGE);
             
-                                        let org_page = data.handlebars.render("org_root", &json!({
+                                        let org_page = data.handlebars.render("org/org_root", &json!({
                                             "header": header,
                                             "org_nav": nav,
                                             "body": content,
