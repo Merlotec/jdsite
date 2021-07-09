@@ -25,6 +25,8 @@ pub struct SharedData {
     pub org_db: org::OrgDb,
     pub section_db: section::SectionDb,
 
+    pub link_manager: link::LinkManager,
+
     pub auth_manager: auth::AuthManager,
 
     pub handlebars: Handlebars<'static>,
@@ -39,6 +41,7 @@ impl SharedData {
         let section_db = section::SectionDb::open(fs_root.clone() + "/section.sleddb")?;
 
         let auth_manager = auth::AuthManager::open(fs_root.clone() + "/auth.sleddb")?;
+        let link_manager = link::LinkManager::open(fs_root.clone() + "/link.sleddb")?;
 
         let mut handlebars = handlebars::Handlebars::new();
 
@@ -51,6 +54,8 @@ impl SharedData {
             user_db,
             org_db,
             section_db,
+
+            link_manager,
 
             auth_manager,
 
@@ -166,21 +171,17 @@ impl SharedData {
                 match user.user_agent {
                     UserAgent::Client { org_id, .. } => {
                         if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                            if !org.clients.contains(&user_id) && org.credits > 0 {
-                                org.clients.retain(|x| x != user_id);
-                                if let Err(e) = self.org_db.insert(&org_id, &org) {
-                                    println!("Failed to update org db for new client! {}", e);
-                                }
+                            org.clients.retain(|x| x != user_id);
+                            if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                println!("Failed to update org db for new client! {}", e);
                             }
                         }
                     },
                     UserAgent::Associate(org_id) => {
                         if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                            if !org.associates.contains(&user_id) {
-                                org.associates.retain(|x| x != user_id);
-                                if let Err(e) = self.org_db.insert(&org_id, &org) {
-                                    println!("Failed to update org db for new associate! {}", e);
-                                }
+                            org.associates.retain(|x| x != user_id);
+                            if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                println!("Failed to update org db for new associate! {}", e);
                             }
                         }
                     },

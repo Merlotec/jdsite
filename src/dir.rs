@@ -7,6 +7,9 @@ pub const APP_NAME: &'static str = "Senior Duke Portal";
 
 pub const USER_ROOT_PATH: &'static str = "/user";
 
+pub const LINK_BASE_PATH: &'static str = "/link";
+pub const CHANGE_PASSWORD_PATH: &'static str = "/user/change_password";
+
 pub fn user_path(user_id: user::UserKey) -> String {
     USER_ROOT_PATH.to_owned() + "/" + &user_id.to_string()
 }

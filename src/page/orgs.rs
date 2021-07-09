@@ -16,6 +16,7 @@ use crate::data::SharedData;
 use crate::page;
 use crate::dir;
 use crate::org;
+use crate::util;
 
 use actix_web::{get, post};
 
@@ -107,7 +108,7 @@ pub async fn add_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, fo
                 
                 let org = org::Org::new(form.name.clone());
 
-                if org.name.contains("\'") || org.name.contains("\"") || org.name.contains("\r") || org.name.contains("\t") {
+                if !util::is_string_server_valid(&org.name) {
                     return HttpResponse::new(http::StatusCode::BAD_REQUEST)
                     .set_body(Body::from("Dissalowed characters in org name!"));
                 }

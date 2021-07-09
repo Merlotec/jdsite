@@ -87,5 +87,22 @@ impl LoginDb {
             Err(e) => Err(LoginEntryError::DbError(db::Error::DbError(e)))
         }
     }
+
+    pub fn change_password(&self, username: &str, password: &str, default_password: bool) -> Result<(), AuthError> {
+        match self.db().fetch(username) {
+            Ok(Some(mut entry)) => {
+                entry.password = password.to_owned();
+                entry.default_password = default_password;
+                match self.db().insert(username, &entry) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(AuthError::DbError(e)),
+                }
+            },
+            Ok(None) => Err(AuthError::NoUser),
+            Err(e) => {
+                Err(AuthError::DbError(e))
+            },
+        }
+    }
 }
 

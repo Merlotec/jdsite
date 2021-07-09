@@ -51,6 +51,8 @@ async fn main() -> std::io::Result<()> {
     }, "Nemisite", false);
     */
 
+    //println!("{}", data.link_manager.create_link(link::Link::ChangePassword(data.login_db.db().fetch("ncbmknight@gmail.com").unwrap().unwrap().user_id), std::time::Duration::from_secs(1000)).unwrap().to_string());
+
     std::thread::spawn(|| {
         loop {
             use std::io::{stdin,stdout,Write};
@@ -83,6 +85,8 @@ async fn main() -> std::io::Result<()> {
             .service(page::login::login_get)
             .service(page::login::login_post)
             .service(page::login::logout_get)
+            .service(page::login::change_password_get)
+            .service(page::login::change_password_post)
             // Org
             .service(page::orgs::org_get)
             .service(page::orgs::orgs_get)

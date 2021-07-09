@@ -42,8 +42,8 @@
     }
 
     function showDeleteAssociateModal(userId, associateName) {
-        var text = document.getElementById('deleteAssociateModalText');
-        text.innerText = 'Account Name: ' + associateName;
+        var text = document.getElementById('deleteAssociateModalTitle');
+        text.innerText = 'Delete ' + associateName;
 
         var userIdInput = document.getElementById('deleteAssociateModalUserId');
         userIdInput.value = userId;
@@ -80,10 +80,10 @@
   <div id="deleteAssociateModal" class="modal">
     <div class="modal-content">
       <span onclick="closeModal('deleteAssociateModal')" class="modal-close">&times;</span>
-      <h2 style="text-align: center;">
+      <h2 id="deleteAssociateModalTitle" style="text-align: center;">
           Delete Teacher Account
       </h2>
-      <h3 id="deleteAssociateModalText" style="text-align: center;"></h3>
+      <h3 style="text-align: center;">Are you sure you want to delete this account? Deleted accounts cannot be recovered.</h3>
       <br>
       <form style="text-align: center;" method="POST" action="{{delete_user_url}}">
           <input id="deleteAssociateModalUserId" name="user_id" type="hidden" value=""></input>
