@@ -33,6 +33,14 @@ pub enum UserAgent {
 }
 
 impl UserAgent {
+    pub fn is_client(&self) -> bool {
+        if let UserAgent::Client { .. } = self {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn can_view_orgs(&self) -> bool {
         match self {
             UserAgent::Owner => true,

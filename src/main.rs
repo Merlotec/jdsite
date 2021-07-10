@@ -104,7 +104,10 @@ async fn main() -> std::io::Result<()> {
             .service(page::associates::add_associate_get)
             .service(page::associates::add_associate_post)
             // Sections
-            .service(page::section::select_section_get)
+            .service(page::section::section_get)
+            .service(page::section::select_activity_post)
+            .service(page::section::upload_section_post)
+            .service(page::section::asset_get)
             // Root
             .service(page::root_get)
             // Static files

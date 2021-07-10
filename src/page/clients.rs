@@ -284,47 +284,83 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                 Ok(Some(ctx)) => {
                     match data.user_db.fetch(&user_id) {
                         Ok(Some(user)) => {
-                            if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
-                                match data.org_db.fetch(&org_id) {
-                                    Ok(Some(org)) => {
+                            if let user::UserAgent::Client { sections, .. } = &user.user_agent {
+                                if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
+                                    match data.org_db.fetch(&org_id) {
+                                        Ok(Some(org)) => {
+    
+                                            let mut sections_body: String = String::new();
+    
+                                            for (i, section) in data.sections.iter().enumerate() {
+                                                let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
+                                                    if let Some(section_id) = sections[i] {
+                                                        if let Ok(Some(section_instance)) = data.section_db.fetch(&section_id) {
+                                                            (
+                                                               section.activities[section_instance.activity_index].name.clone(), 
+                                                                "activity-chosen".to_owned(),
+                                                                section_instance.state.to_string(),
+                                                                section_instance.state.css_class(),
+                                                            )
+                                                        } else {
+                                                            (
+                                                                "ERROR".to_owned(), 
+                                                                 "activity-not-chosen".to_owned(),
+                                                                 String::new(),
+                                                                 "".to_owned(),
+                                                             )
+                                                        }
+                                                    } else {
+                                                        (
+                                                            "Click to Select Challenge".to_owned(), 
+                                                            "activity-not-chosen".to_owned(),
+                                                            "Not Started".to_owned(),
+                                                            String::new(),
+                                                        )
+                                                    }
+                                                };
 
-                                        let mut sections_body: String = String::new();
-
-                                        for (i, section) in data.sections.iter().enumerate() {
-                                            sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
-                                                "section_url": dir::client_path(org_id, user_id) + dir::SECTIONS_PAGE + "/" + &i.to_string(),
-                                                "section_image_url": &section.image_url,
-                                                "section_title": &section.name,
-                                                "section_description": &section.subtitle,
+                                                sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
+                                                    "section_url": dir::client_path(org_id, user_id) + dir::SECTION_ROOT + "/" + &i.to_string(),
+                                                    "section_image_url": &section.image_url,
+                                                    "section_title": &section.name,
+                                                    "activity_title": &activity_title,
+                                                    "activity_title_class": &activity_title_class,
+                                                    "state": &state,
+                                                    "state_class": &state_class,
+                                                })).unwrap();
+                                            }
+    
+                                            let body: String = data.handlebars.render("client/client_dashboard", &json!({
+                                                "sections": sections_body,
                                             })).unwrap();
-                                        }
-
-                                        let body: String = data.handlebars.render("client/client_dashboard", &json!({
-                                            "sections": sections_body,
-                                        })).unwrap();
-
-                                        let header: String = page::path_header(&data, &[
-                                            (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                            (dir::org_path(org_id), org.name.clone()),
-                                            (dir::client_path(org_id, user_id), user.name())
-                                        ]);
-
-                                        let root: String = data.handlebars.render("client/client_root", &json!({
-                                            "header": header,
-                                            "body": body,
-                                        })).unwrap();
-
-                                        let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
-                        
-                                        HttpResponse::new(http::StatusCode::OK)
-                                            .set_body(Body::from(body))
-                                    },
-                                    _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                        .set_body(Body::from("Failed to fetch org!")),
+    
+                                            let header: String = page::path_header(&data, &[
+                                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
+                                                (dir::org_path(org_id), org.name.clone()),
+                                                (dir::client_path(org_id, user_id), user.name())
+                                            ]);
+    
+                                            let root: String = data.handlebars.render("client/client_root", &json!({
+                                                "header": header,
+                                                "body": body,
+                                            })).unwrap();
+    
+                                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
+                            
+                                            HttpResponse::new(http::StatusCode::OK)
+                                                .set_body(Body::from(body))
+                                        },
+                                        _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                            .set_body(Body::from("Failed to fetch org!")),
+                                    }
+                                } else {
+                                    page::not_authorized_page(Some(ctx), &data)
                                 }
                             } else {
-                                page::not_authorized_page(Some(ctx), &data)
+                                HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                            .set_body(Body::from("User is not a client!"))
                             }
+                            
                         },
                         Ok(None) => HttpResponse::new(http::StatusCode::BAD_REQUEST)
                             .set_body(Body::from("Could not find user!")),

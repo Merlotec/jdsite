@@ -1,15 +1,57 @@
+<script>
+    function activityOptionSelected(index, title) {
+        
+
+        var indexInput = document.getElementById('selectOptionIndex');
+        var oldIndex = indexInput.value;
+        indexInput.value = index;
+
+        var titleText = document.getElementById('selectOptionText');
+        titleText.innerHTML = 'Do you want to proceed with the challenge <b>' + title + '</b>?';
+        titleText.className = "white";
+
+        // Clear old selections.
+        let oldDiv = document.getElementById('activityOption' + oldIndex);
+        if (oldDiv != null) {
+            oldDiv.className = "activity-option";
+        }
+
+        var optionDiv = document.getElementById('activityOption' + index);
+        optionDiv.className = "activity-option activity-option-selected";
+
+        var button = document.getElementById('selectOptionSubmit');
+        
+        button.disabled = false;
+        button.className = 'submit-button';
+ 
+    }
+</script>
+
 <div class="inner-nav-section">
     <a class="back-button" href="{{back_url}}">
         &lt;
     </a>
     <span class="inner-header" style="display: inline-block;">
-        {{section_name}}
+        {{section_name}} - Choose Your Option
     </span>
 </div>
 
 <div class="center-content">
-    <h2 style="text-align: center;">Select a Challenge</h2>
+    <img class="choose-option-image" src="{{section_image_url}}"/>
+    <div class="choose-option-header" style="text-align: center;">
+        You must choose a challenge option from the list below. 
+        Make sure you read through each one carefully so you know what's involved.
+    </div>
     <br>
-    {{{activities}}}
-    <br><br><br><br>
+    <div id="sections">
+        {{{activities}}}
+    </div>
+    <br>
+    
+    <form style="text-align: center; width: 70%; margin: auto; float: center;" method="POST" action="{{select_activity_url}}">
+        <h4 id="selectOptionText" style="text-align: center; display: block; height: 70px; width: 100%;">You must click on a challenge in order to select it</h4>
+        <input id="selectOptionIndex" name="index" class="input-box" type="hidden" placeholder="Class"></input>
+        <input id="selectOptionSubmit" style="margin: auto;" class="submit-button-disabled" type="submit" value="Select Challenge"/>
+    </form>
+    <br><br><br><br><br>
 </div>

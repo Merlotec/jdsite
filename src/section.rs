@@ -1,5 +1,5 @@
 
-use crate::{db, define_uuid_key};
+use crate::{db, define_uuid_key, user};
 use serde::{Serialize, Deserialize};
 
 
@@ -23,19 +23,55 @@ pub enum SectionState {
     Completed,
 }
 
+impl ToString for SectionState {
+    fn to_string(&self) -> String {
+        match self {
+            SectionState::InProgress => "In Progress".to_owned(),
+            SectionState::InReview => "In Review".to_owned(),
+            SectionState::Completed => "Completed".to_owned(),
+        }
+    }
+}
+
+impl SectionState {
+    pub fn css_class(&self) -> String {
+        match self {
+            SectionState::InProgress => "state-in-progress".to_owned(),
+            SectionState::InReview => "state-in-review".to_owned(),
+            SectionState::Completed => "state-completed".to_owned(),
+        }
+    }
+}
+
 impl Default for SectionState {
     fn default() -> Self {
         SectionState::InProgress
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Section {
-    pub description: String,
-    pub pre_text: String,
-    pub post_text: String,
+    pub activity_index: usize,
+    pub user_id: user::UserKey,
+    pub plan: String,
+    pub reflection: String,
     pub assets: Vec<String>,
     pub state: SectionState,
+    pub outstanding: bool,
+}
+
+impl Section {
+    pub fn new(activity_index: usize, user_id: user::UserKey) -> Self {
+        Self {
+            activity_index,
+            user_id,
+            plan: String::new(),
+            reflection: String::new(),
+            assets: Vec::new(),
+            state: SectionState::InProgress,
+            outstanding: false,
+        }
+    }
 }
 
 define_uuid_key!(SectionKey);

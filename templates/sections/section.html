@@ -1,0 +1,120 @@
+<script>
+    function showModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "block";
+    }
+
+    function closeModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "none";
+    }
+
+    function registerModal(id) {
+        var modal = document.getElementById(id);
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    }
+
+    function deleteAsset(filename) {
+        var deleteInput = document.getElementById('uploadSectionDelete');
+        deleteInput.value = filename;
+
+        var form = document.getElementById('uploadSectionForm');
+        form.submit();
+    }
+
+    function showDeleteAssetModal(filename) {
+        var text = document.getElementById('deleteAssetModalTitle');
+        text.innerText = 'Delete ' + filename;
+
+        var deleteButton = document.getElementById('deleteAssetModalButton');
+        deleteButton.onclick = function() { deleteAsset(filename); };
+
+        showModal('deleteAssetModal');
+    }
+
+    
+</script>
+
+
+<div class="inner-nav-section">
+    <a class="back-button" href="{{back_url}}">
+        &lt;
+    </a>
+    <span class="inner-header" style="display: inline-block;">
+        {{section_name}} - <span class="{{state_class}}">{{state}}</span>
+    </span>
+</div>
+
+<div class="center-content-medium">
+    <img class="choose-option-image" src="{{section_image_url}}"/>
+    
+    
+    <div class="activity-description">
+        <h2 style="text-align: center;">
+            {{activity_name}}
+        </h2>
+        
+        <h3 style="text-align: center;">
+            {{activity_subtitle}}
+        </h3>
+        {{{activity_description}}}
+    </div>
+
+    <br>
+    
+    <form id="uploadSectionForm" style="text-align: left; width: 70%; margin: auto; float: center;" method="POST" enctype="multipart/form-data" action="{{upload_section_url}}">
+        <h3>Plan</h3>
+        <p>
+            Before you begin, explain in detail: how you plan to achieve this task, how
+            much of this you have done before, what worries you most about this challenge and what
+            excites you about this challenge and any other relevant information
+        </p>
+        <textarea id="planText" name="plan" class="input-area" rows="15" placeholder="Pre-Challenge Plan...">{{plan}}</textarea>
+        <br>
+        <h3>Reflection</h3>
+        <p>
+            Having completed the challenge, explain in detail: what you feel you have
+            learned throughout this task, how much you enjoyed this challenge, if your worries were
+            justified, how you think having completed this challenge could be of use to you in the future
+            etc
+        </p>
+        <textarea id="reflectionText" name="reflection" class="input-area" rows="15" placeholder="Post-Challenge Reflection...">{{reflection}}</textarea>
+        <br>
+        <h3>Files</h3>
+        {{{files_info}}}
+        <div>
+            {{{files}}}
+        </div>
+        <br>
+        <h3>File Upload</h3>
+        <p>
+            You may also be required to upload photos/videos as evidence. 
+            You can upload them here. Note: large videos may take some time to upload, so please be patient, and once you have clicked 'Save and Upload', do not refresh the page.
+        </p>
+        <input class="bubble" multiple style="margin: auto; float: center; display: block;" type="file" name="file" id="fileToUpload"/>
+        <br><br><br>
+        <input id="uploadSectionDelete" name="delete" value="" type="hidden"/>
+        <input id="submitButton" style="margin: auto; float: center; display: block;" class="submit-button" type="submit" value="Save and Upload"/>
+    </form>
+    <br><br><br><br><br>
+</div>
+
+
+
+<div id="deleteAssetModal" class="modal">
+    <div class="modal-content">
+      <span onclick="closeModal('deleteAssetModal')" class="modal-close">&times;</span>
+      <h2 id="deleteAssetModalTitle" style="text-align: center;">
+      </h2>
+      <h4 style="text-align: center;">
+        Are you sure you want to delete this asset? Deleted assets cannot be recovered.
+      </h4>
+      <br>
+      <button id="deleteAssetModalButton" class="submit-button" style="float: center; margin: auto; display: block;">Delete Asset</button>
+    </div>
+  </div>

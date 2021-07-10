@@ -4,6 +4,11 @@ html {
     background-color: rgb(57, 56, 63);
     padding: 0;
     margin: 0;
+    font-size: 17px;
+}
+
+p {
+    font-size: 17px;
 }
 
 h2 {
@@ -13,6 +18,12 @@ h2 {
 }
 
 h3 {
+    font-weight: lighter;
+    font-size: 25px;
+}
+
+h4 {
+    font-size: 20px;
     font-weight: lighter;
 }
 
@@ -41,6 +52,7 @@ tr {
 a {
     font-style: normal;
     text-decoration: none;
+    font-size: 17px;
 }
 
 .menu {
@@ -143,6 +155,8 @@ a {
 .center-content-narrow {
     text-align: center;
     width: 50%;
+    min-width: 600px;
+    max-width: 1000px;
     position: auto;
     margin-right: auto;
     margin-left: auto;
@@ -150,6 +164,16 @@ a {
 
 .center-content {
     text-align: center;
+    position: auto;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.center-content-medium {
+    text-align: center;
+    width: 75%;
+    min-width: 600px;
+    max-width: 1500px;
     position: auto;
     margin-right: auto;
     margin-left: auto;
@@ -186,47 +210,6 @@ a {
     cursor: default;
 }
 
-
-.input-box:focus, textarea:focus, select:focus  {
-    background-color: rgb(66, 65, 78);
-    border-style: hidden;
-    box-shadow: none;
-    padding: 10px;
-    text-align: left; 
-    font-size: 18px; 
-    max-width: 500px;
-    width: 50%;
-    color: white;
-}
-
-.input-box:-webkit-autofill {
-    background-color: rgb(66, 65, 78);
-    border-style: hidden;
-    box-shadow: none;
-    padding: 10px;
-    text-align: left; 
-    font-size: 18px; 
-    max-width: 500px;
-    width: 50%;
-    color: white;
-}
-
-.input-box:focus:-webkit-autofill,
-.input-box:focus:-webkit-autofill:hover, 
-.input-box:focus:-webkit-autofill:focus, 
-.input-box:focus:-webkit-autofill:active
-{
-    background-color: rgb(66, 65, 78);
-    border-style: hidden;
-    box-shadow: none;
-    padding: 10px;
-    text-align: left; 
-    font-size: 18px; 
-    max-width: 500px;
-    width: 50%;
-    color: white;
-}
-
 .input-box {
     background-color: rgb(66, 65, 78);
     border-style: hidden;
@@ -240,6 +223,35 @@ a {
     border-radius: 5px;
     box-sizing: border-box;
 }
+
+.input-box:focus {
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+
+    color: white;
+}
+
+.input-box:-webkit-autofill {
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+
+    color: white;
+}
+
+.input-box:focus:-webkit-autofill,
+.input-box:focus:-webkit-autofill:hover, 
+.input-box:focus:-webkit-autofill:focus, 
+.input-box:focus:-webkit-autofill:active
+{
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+
+    color: white;
+}
+
 
 .submit-button:hover {
     background-color: #f78f28;
@@ -266,12 +278,12 @@ a {
 .table-content {
     display: inline-block;
     float: center;
-    max-width: 1500px;
+    max-width: 1200px;
     width: 70%;
 }
 
 .selectable-row {
-    
+    cursor: pointer;
 }
 
 .selectable-row:hover {
@@ -408,8 +420,7 @@ a {
 .user-table {
     border-collapse: collapse;
     margin: auto;
-    width: 70%;
-    max-width: 750px;
+    width: 100%;
 }
 
 .attribute-name {
@@ -507,7 +518,6 @@ a {
 
 .section-bubble {
     text-align: center;
-    float: center;
     padding: 10px;
     padding-left: 16px;
     padding-right: 16px;
@@ -540,7 +550,6 @@ a {
 .section-title {
     font-size: 20px;
     color: white;
-    display: block;
 }
 
 .center-content-dashboard {
@@ -570,14 +579,27 @@ a {
 }
 
 .activity-option {
+    padding: 40px;
     text-align: left;
     float: center;
-    width: 50%;
-    max-width: 650px;
+    width: 60%;
+    max-width: 700px;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 50px;
+    margin-top: 20px;
     font-size: 18px;
+    border: 1px solid rgb(66, 65, 78);
+    border-radius: 40px;
+    cursor: pointer;
+}
+
+.activity-option:hover {
+    background-color: rgb(66, 65, 78);
+}
+
+.activity-option-selected {
+    border: 1px solid #de9750;
+    background-color: rgb(66, 65, 78);
 }
 
 .activity-title {
@@ -591,4 +613,140 @@ a {
     font-weight: light;
     display: inline-block;
     margin-bottom: 11px;
+}
+
+.choose-option-header {
+    float: center;
+    margin: auto;
+    color: white;
+    font-size: 22px;
+    width: 50%;
+    max-width: 620px;
+}
+
+.white {
+    color: white;
+}
+
+.activity-chosen {
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.activity-not-chosen {
+    font-size: 17px;
+    margin-top: 30px;
+    font-style: italic;
+    color: #de9750;
+}
+
+.state-in-progress {
+    color: white;
+}
+
+.state-in-review {
+    color: orangered;
+}
+
+.state-completed {
+    color: green;
+}
+
+.choose-option-image {
+    float: center;
+    display: block;
+    margin-top: -30px;
+    width: 70px;
+    height: 70px;
+    margin-bottom: 50px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+.activity-description {
+    padding: 40px;
+    padding-top: 5px;
+    text-align: left;
+    float: center;
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    font-size: 18px;
+    background-color: rgb(43, 42, 56);
+    color: rgb(175, 175, 175);
+    border-radius: 5px;
+    border: 1px solid rgb(82, 80, 97);
+    border-radius: 40px;
+    box-sizing: border-box;
+}
+
+
+.input-area {
+    display: block;
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+    padding: 10px;
+    text-align: left; 
+    font-size: 18px; 
+    font-family: inherit;
+    width: 100%;
+    color: white;
+    border-radius: 5px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.input-area:focus {
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+    color: white;
+}
+
+.input-area:-webkit-autofill {
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+    color: white;
+}
+
+.input-area:focus:-webkit-autofill,
+.input-area:focus:-webkit-autofill:hover, 
+.input-area:focus:-webkit-autofill:focus, 
+.input-area:focus:-webkit-autofill:active
+{
+    background-color: rgb(66, 65, 78);
+    border-style: hidden;
+    box-shadow: none;
+    color: white;
+}
+
+.add-file-button {
+    border-style: none;
+    padding: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: #de9750;
+    color: white;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.add-file-button:hover {
+    background-color: #f78f28;
+}
+
+.uploaded-image {
+    display: block; 
+    margin: auto; 
+    float: center; 
+    border-radius: 5px; 
+    max-height: 600px;
+    max-width: 1000px;
+    width: 70%;
+    height: auto;
 }

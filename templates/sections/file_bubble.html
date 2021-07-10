@@ -1,0 +1,13 @@
+<div class="bubble" style="width: 100%; margin-bottom: 40px; box-sizing: border-box;">
+    <p style="display: block; float: left;">{{{filename}}}</p>
+    <div style="margin-top: 18px; display: block; float: right;">
+        <a class="text-button" href="{{download_url}}">
+            Download
+        </a>
+        |
+        <span class="text-button" onclick="showDeleteAssetModal('{{filename}}')">
+            Delete
+        </span>
+    </div>
+    {{{media}}}
+</div>

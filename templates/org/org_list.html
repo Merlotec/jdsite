@@ -135,7 +135,7 @@
     <div class="center-content">
         
         <h2> Organisations </h2>
-        <h3 style="text-align: center;">Below is the list of organisations signed up to senior duke:</h3>
+        <h4 style="text-align: center;">Below is the list of organisations signed up to senior duke:</h4>
         <br>
 
         <div class="table-content">        
@@ -143,13 +143,13 @@
 
           <button title="Add Organisation" class="submit-button" style="float: center;" onclick="validateOrgName(); showModal('addOrgModal')">Add Organisation</button>
           <br><br>
-          <table class="content-table" id="orgTable">
-            <tr class="table-header">
+          <table class="content-table" style="width: 100%;" id="orgTable">
+            <tr style="width: 100%;" class="table-header">
                 <th style="width:30%;">Organisation Name</th>
                 <th style="width:25%;">Admin</th>
-                <th style="width:10%;">Unreviewed Sections</th>
-                <th style="width:10%;">Teachers</th>
-                <th style="width:10%;">Pupils</th>
+                <th style="width:15%;">Unreviewed Sections</th>
+                <th style="width:8%;">Teachers</th>
+                <th style="width:7%;">Pupils</th>
                 <th style="width:10%;">Credits</th>
                 <th style="width:5%;"></th>
             </tr>
@@ -166,7 +166,7 @@
     <h2 style="text-align: center;">
         Add Organisation
     </h2>
-    <h3 style="text-align: center;">Enter the name of the organisation below:</h3>
+    <h4 style="text-align: center;">Enter the name of the organisation below:</h4>
     <br>
     <form style="text-align: center;" method="POST" action="{{{add_org_url}}}">
         <input id="addOrgModalOrgName" onkeyup="validateOrgName()" name="name" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Organisation Name"></input>
@@ -183,7 +183,7 @@
     <h2 style="text-align: center;">
         Assign Admin
     </h2>
-    <h3 id="assignAdminModalText" style="text-align: center;"></h3>
+    <h4 id="assignAdminModalText" style="text-align: center;"></h4>
     <br>
     <form style="text-align: center;" method="POST" action="{{assign_admin_url}}">
         <input id="assignAdminModalEmail" name="email" class="input-box" type="text" style="width: 60%; margin-right: 20px;" placeholder="Email Address"></input>
@@ -201,7 +201,7 @@
     <h2 style="text-align: center;">
         Delete Organisation
     </h2>
-    <h3 id="deleteOrgModalText" style="text-align: center;"></h3>
+    <h4 id="deleteOrgModalText" style="text-align: center;"></h4>
     <br>
     <form style="text-align: center;" method="POST" action="{{delete_org_url}}">
         <input id="deleteOrgModalConfirm" class="input-box" type="text" onkeyup="confirmOrgNameForDeletion()" style="width: 60%; margin-right: 20px;" placeholder="Confirm organisation name..."></input>
@@ -220,7 +220,7 @@
     <h2 style="text-align: center;">
         Add Credits
     </h2>
-    <h3 id="addCreditsModalText" style="text-align: center;"></h3>
+    <h4 id="addCreditsModalText" style="text-align: center;"></h4>
     <br>
     <form style="text-align: center;" method="POST" action="{{add_credits_url}}">
         <input id="addCreditsModalCount" name="credits_count" class="input-box" type="text" onkeyup="validateNumber(document.getElementById('addCreditsModalCount'), document.getElementById('addCreditsModalSubmit'))" style="width: 90px; margin-right: 20px;" placeholder="Credits..."></input>

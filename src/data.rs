@@ -238,6 +238,14 @@ impl SharedData {
         }
     }
 
+    pub fn add_section(&self, section: &section::Section) -> Result<section::SectionKey, db::Error> {
+        let section_id = section::SectionKey::generate();
+        match self.section_db.insert(&section_id, section) {
+            Ok(_) => Ok(section_id),
+            Err(e) => Err(e),
+        }
+    }
+
     pub fn nav_items_for_context(&self, ctx: Option<AuthContext>) -> Vec<(String, String)> {
         match ctx {
             Some(ctx) => self.nav_items_for_agent(&ctx.user_id, &ctx.user.user_agent),
@@ -267,5 +275,13 @@ impl SharedData {
                 (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string() + dir::CLIENT_ROOT_PATH + "/" + &user_key.to_string(), dir::SECTIONS_TITLE.to_string()),
             ],
         }
+    }
+
+    pub fn section_path(&self, section_id: &section::SectionKey) -> String {
+        format!("{}/sections/{}/", &self.fs_root, section_id.to_string())
+    }
+
+    pub fn path_for_asset(&self, section_id: &section::SectionKey, filename: &str) -> String {
+        format!("{}/sections/{}/{}", &self.fs_root, section_id.to_string(), filename)
     }
 }
