@@ -45,6 +45,8 @@ pub const CLIENTS_PAGE: &'static str = "/clients";
 pub const CLIENTS_TITLE: &'static str = "Pupils";
 pub const ADD_CLIENT_PATH: &'static str = "/add_client";
 
+pub const SECTIONS_PAGE: &'static str = "/section";
+
 pub const ASSOCIATES_PAGE: &'static str = "/associates";
 pub const ASSOCIATES_TITLE: &'static str = "Teachers";
 

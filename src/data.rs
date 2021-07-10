@@ -6,6 +6,7 @@ use auth::{AuthContext, AuthToken};
 use actix_web::HttpMessage;
 use std::str::FromStr;
 use std::time::Duration;
+use section::Section;
 use handlebars::{
     Handlebars,
     Helper,
@@ -25,6 +26,8 @@ pub struct SharedData {
     pub org_db: org::OrgDb,
     pub section_db: section::SectionDb,
 
+    pub sections: [section::SectionInfo; 6],
+
     pub link_manager: link::LinkManager,
 
     pub auth_manager: auth::AuthManager,
@@ -40,6 +43,8 @@ impl SharedData {
         let org_db = org::OrgDb::open(fs_root.clone() + "/org.sleddb")?;
         let section_db = section::SectionDb::open(fs_root.clone() + "/section.sleddb")?;
 
+        let sections: [section::SectionInfo; 6] = section::SectionInfo::sections_list();
+
         let auth_manager = auth::AuthManager::open(fs_root.clone() + "/auth.sleddb")?;
         let link_manager = link::LinkManager::open(fs_root.clone() + "/link.sleddb")?;
 
@@ -54,6 +59,8 @@ impl SharedData {
             user_db,
             org_db,
             section_db,
+
+            sections,
 
             link_manager,
 

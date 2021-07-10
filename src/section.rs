@@ -4,16 +4,16 @@ use serde::{Serialize, Deserialize};
 
 
 pub struct SectionInfo {
-    name: String,
-    subtitle: String,
-    activities: Vec<Activity>,
-    image_url: String,
+    pub name: String,
+    pub subtitle: String,
+    pub activities: Vec<Activity>,
+    pub image_url: String,
 }
 
 pub struct Activity {
-    name: String,
-    subtitle: String,
-    activity_url: String,
+    pub name: String,
+    pub subtitle: String,
+    pub activity_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,11 +31,11 @@ impl Default for SectionState {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Section {
-    description: String,
-    pre_text: String,
-    post_text: String,
-    assets: Vec<String>,
-    state: SectionState,
+    pub description: String,
+    pub pre_text: String,
+    pub post_text: String,
+    pub assets: Vec<String>,
+    pub state: SectionState,
 }
 
 define_uuid_key!(SectionKey);
@@ -73,7 +73,7 @@ impl SectionInfo {
                     Activity {
                         name: "Flashcards and Mindmaps".to_owned(),
                         subtitle: "Critical Thinking".to_owned(),
-                        activity_url: "sections/creative/flascards".to_owned(),
+                        activity_url: "sections/creative/flashcards".to_owned(),
                     },
                 ],
             },
@@ -148,7 +148,7 @@ impl SectionInfo {
             },
             SectionInfo {
                 name: "First Aid".to_owned(),
-                subtitle: "This is a compulsory challenge with no choices.".to_owned(),
+                subtitle: "This is a compulsory challenge with no choices".to_owned(),
                 image_url: "/section_icons/first_aid.png".to_owned(),
                 activities: vec![
                     Activity {

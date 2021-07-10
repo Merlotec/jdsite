@@ -275,7 +275,7 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
     }
 }
 
-/*
+
 #[get("/org/{org}/client/{user}")]
 pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, path: web::Path<(String, String)>) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&path.0.0) {
@@ -288,10 +288,19 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                                 match data.org_db.fetch(&org_id) {
                                     Ok(Some(org)) => {
 
-                                        
+                                        let mut sections_body: String = String::new();
+
+                                        for (i, section) in data.sections.iter().enumerate() {
+                                            sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
+                                                "section_url": dir::client_path(org_id, user_id) + dir::SECTIONS_PAGE + "/" + &i.to_string(),
+                                                "section_image_url": &section.image_url,
+                                                "section_title": &section.name,
+                                                "section_description": &section.subtitle,
+                                            })).unwrap();
+                                        }
 
                                         let body: String = data.handlebars.render("client/client_dashboard", &json!({
-                                            "sections": sections,
+                                            "sections": sections_body,
                                         })).unwrap();
 
                                         let header: String = page::path_header(&data, &[
@@ -305,7 +314,7 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                                             "body": body,
                                         })).unwrap();
 
-                                        let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Account Created", dir::APP_NAME.to_owned(), root).unwrap();
+                                        let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
                         
                                         HttpResponse::new(http::StatusCode::OK)
                                             .set_body(Body::from(body))
@@ -338,4 +347,3 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
             .set_body(Body::from("Invalid org_id"))
     }
 }
-*/

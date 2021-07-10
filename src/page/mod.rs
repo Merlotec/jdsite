@@ -3,6 +3,7 @@ pub mod orgs;
 pub mod clients;
 pub mod user;
 pub mod associates;
+pub mod section;
 
 use std::sync::Arc;
 
@@ -114,7 +115,7 @@ pub fn path_header(data: &SharedData, items: &[(String, String)]) -> String {
 }
 
 pub fn not_authorized_page(ctx: Option<AuthContext>, data: &SharedData) -> HttpResponse {
-    let page_body: String = data.handlebars.render("not_authorized", &()).unwrap();
+    let page_body: String = data.handlebars.render("shared/not_authorized", &()).unwrap();
 
     let body = render_page(ctx, data, dir::APP_NAME.to_owned() + " | Not Authorised", dir::APP_NAME.to_owned(), page_body).unwrap();
 

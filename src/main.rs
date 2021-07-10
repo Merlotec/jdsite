@@ -98,10 +98,13 @@ async fn main() -> std::io::Result<()> {
             .service(page::clients::clients_get)
             .service(page::clients::add_client_get)
             .service(page::clients::add_client_post)
+            .service(page::clients::client_dashboard_get)
             // Associates
             .service(page::associates::associates_get)
             .service(page::associates::add_associate_get)
             .service(page::associates::add_associate_post)
+            // Sections
+            .service(page::section::select_section_get)
             // Root
             .service(page::root_get)
             // Static files

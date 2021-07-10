@@ -507,25 +507,30 @@ a {
 
 .section-bubble {
     text-align: center;
+    float: center;
     padding: 10px;
     padding-left: 16px;
     padding-right: 16px;
     background-color: rgb(43, 42, 56);
     color: rgb(175, 175, 175);
-    border-radius: 5px;
+    border-radius: 15px;
     border: 1px solid rgb(82, 80, 97);
     box-sizing: border-box;
 
-    width: 200px;
-    height: 200px;
+    width: 260px;
+    height: 260px;
+
+    margin: 15px;
 
     display: inline-block;
+    cursor: pointer;
 }
 
 .section-bubble-image {
     float: center;
-    width: 70px;
-    height: 70px;
+    display: block;
+    width: 60px;
+    height: 60px;
     margin-top: 30px;
     margin-bottom: 20px;
     margin-left: auto;
@@ -535,4 +540,55 @@ a {
 .section-title {
     font-size: 20px;
     color: white;
+    display: block;
+}
+
+.center-content-dashboard {
+    text-align: center;
+    width: 871px;
+    display: block;
+    float: center;
+    margin: auto;
+}
+
+
+@media only screen and (max-width: 1000px) {
+/* CSS that should be displayed if width is equal to or less than 991px goes here */
+    .center-content-dashboard {
+        text-align: center;
+        width: 100%;
+        display: inline-block;
+        margin: auto;
+    }
+}
+
+
+.horizontal-separator {
+    width: 100%;
+    border-bottom: 1px solid rgb(66, 65, 78);
+    box-sizing: border-box;
+}
+
+.activity-option {
+    text-align: left;
+    float: center;
+    width: 50%;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 50px;
+    font-size: 18px;
+}
+
+.activity-title {
+    font-size: 25px;
+    color: white;
+    font-weight: bold;
+}
+
+.activity-subtitle {
+    font-size: 22px;
+    font-weight: light;
+    display: inline-block;
+    margin-bottom: 11px;
 }
