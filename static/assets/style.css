@@ -52,19 +52,55 @@ tr {
 a {
     font-style: normal;
     text-decoration: none;
-    font-size: 17px;
+}
+
+b {
+    font-weight: bold;
 }
 
 .menu {
     background-color: rgb(66, 65, 78);
     display: inline-block;
     width: 100%;
-    padding: 15px;
+    padding-top: 7px;
     padding-left: 20px;
-    padding-bottom: 10px;
+    padding-right: 20px;
+    padding-bottom: 7px;
     box-sizing: border-box;
     margin: 0;
-    border-bottom: 1px solid rgb(66, 65, 78);
+    border-bottom: 1px solid rgb(43, 42, 56);
+    z-index: 2;
+
+    height: 71px;
+}
+
+.page-content {
+    position: relative;
+    padding-top: 71px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.content-wrap {
+    padding-bottom: 65px;
+}
+
+.footer {
+    text-align: center;
+    height: 50px;
+    position: absolute;
+    bottom: 0;
+    padding-top: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    background-color: rgb(66, 65, 78);
+    border-top: 1px solid rgb(43, 42, 56);
+}
+
+.sticky-top {
+    overflow: none;
+    position: fixed; /* Set the navbar to fixed position */
+    top: 0; /* Position the navbar at the top of the page */
 }
 
 .navbar-brand {
@@ -117,7 +153,7 @@ a {
 
 .navbar-right {
     float: right;
-    margin-top: 13px;
+    margin-top: 15px;
 }
 
 .nav-item {
@@ -352,12 +388,16 @@ a {
 }
 
 .path-header {
-    padding: 20px;
-    font-size: 26px;
-    color: rgb(66, 65, 78);
+    padding: 6px;
+    padding-bottom: 12px;
+    padding-left: 25px;
+    font-size: 25px;
+    color: rgb(88, 87, 102);
 }
 
 .header-item {
+    font-weight: lighter;
+    font-size: 20px;
     color:rgb(175, 175, 175);
     text-decoration: none;
 }
@@ -391,7 +431,7 @@ a {
 }
 
 
-.org-nav-item a {
+.org-nav-link {
     display: inline;
     color: inherit;
     text-align: center;
@@ -407,13 +447,6 @@ a {
 }
 
 .org-nav-item-selected a {
-    display: inline;
-    color: inherit;
-    color: inherit;
-    text-align: center;
-    padding: 16px;
-    font-size: 18px;
-
     text-decoration: none;
 }
 
@@ -571,7 +604,6 @@ a {
     }
 }
 
-
 .horizontal-separator {
     width: 100%;
     border-bottom: 1px solid rgb(66, 65, 78);
@@ -644,8 +676,12 @@ a {
     color: white;
 }
 
+.state-rejected {
+    color: red;
+}
+
 .state-in-review {
-    color: orangered;
+    color: orange;
 }
 
 .state-completed {
@@ -669,7 +705,7 @@ a {
     padding-top: 5px;
     text-align: left;
     float: center;
-    width: 70%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
     margin-top: 20px;
@@ -682,6 +718,10 @@ a {
     box-sizing: border-box;
 }
 
+.miniture-italic {
+    font-size: 15px;
+    font-style: italic;
+}
 
 .input-area {
     display: block;
@@ -750,3 +790,59 @@ a {
     width: 70%;
     height: auto;
 }
+
+.rejected-bubble {
+    text-align: left;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: rgb(43, 42, 56);
+    color: rgb(175, 175, 175);
+    border-radius: 15px;
+    border: 1px solid rgb(141, 30, 30);
+    box-sizing: border-box;
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    display: block;
+}
+
+.rejected-reason {
+    font-style: italic;
+    color: white;
+}
+
+.outstanding-bubble {
+    text-align: left;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: rgb(43, 42, 56);
+    color: rgb(175, 175, 175);
+    border-radius: 15px;
+    border: 1px solid rgb(139, 90, 132);
+    box-sizing: border-box;
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    display: block;
+}
+
+.section-circle {
+    display: inline-block;
+    margin-right: 7px;
+    width: 10px;
+    height: 10px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    background: transparent;
+    border: 1px solid rgb(175, 175, 175);
+    box-sizing: border-box;
+  }

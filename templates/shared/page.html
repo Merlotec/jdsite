@@ -10,41 +10,43 @@
     <link rel="stylesheet" href="/assets/style.css">
   
   <title>{{page_title}}</title>
-  
-  
-  
+
 </head>
 
-<body>
-
-  <section class="menu">
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-brand">
-                {{{page_heading}}} 
-                <div class="auth-section">
-                    <a class="{{page_user_class}}" href="{{page_user_link}}">{{{page_user}}}</a>
-                    <span class="divider"></span>
-                    <a class="auth-button" href="{{page_auth_link}}">{{{page_auth_action}}}</a>
+    <body>
+        <section class="menu sticky-top">
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-brand">
+                    {{{page_heading}}} 
+                    <div class="auth-section">
+                        <a class="{{page_user_class}}" href="{{page_user_link}}">{{{page_user}}}</a>
+                        <span class="divider"></span>
+                        <a class="auth-button" href="{{page_auth_link}}">{{{page_auth_action}}}</a>
+                    </div>
+                </div>
+                <div class="navbar-right">
+                    <ul class="nav-list" data-app-modern-menu="true">
+                        {{{page_nav}}}
+                    </ul>
+                    <div class="icons-menu">
+                        <span class="p-2 mbr-iconfont socicon-facebook socicon"></span>  
+                        <span class="p-2 mbr-iconfont socicon-twitter socicon"></span>
+                        <span class="p-2 mbr-iconfont socicon-instagram socicon"></span>
+                    </div>
+                    
                 </div>
             </div>
-            <div class="navbar-right">
-                <ul class="nav-list" data-app-modern-menu="true">
-                    {{{page_nav}}}
-                </ul>
-                <div class="icons-menu">
-                    <span class="p-2 mbr-iconfont socicon-facebook socicon"></span>  
-                    <span class="p-2 mbr-iconfont socicon-twitter socicon"></span>
-                    <span class="p-2 mbr-iconfont socicon-instagram socicon"></span>
-                </div>
-                
-            </div>
-        </div>
-    </nav>
-</section>
+        </nav>
+        </section>
 
-<section class="content">
-    {{{page_body}}}
-</section>
-</body>
+        <section class="page-content">
+            <div class="content-wrap">
+            {{{page_body}}}
+            </div>
+            <footer class="footer">
+                &copy; 2021 Capable Kids Ltd.
+            </footer>
+        </section>
+    </body>
 </html>

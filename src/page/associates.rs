@@ -19,6 +19,9 @@ use crate::org;
 use crate::user;
 use crate::util;
 use crate::login;
+use crate::link;
+
+use user::Privilege;
 
 use actix_web::{get, post};
 
@@ -75,12 +78,12 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                 "associate_rows": rows,
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                (dir::org_path(org_id), org.name.clone()),
+                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
                             ]);
 
-                            let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
+                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
 
                             let org_page = data.handlebars.render("org/org_root", &json!({
                                 "header": header,
@@ -88,7 +91,7 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                 "body": content,
                             })).unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name, dir::APP_NAME.to_owned(), org_page).unwrap();
+                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name  + " - Teachers", dir::APP_NAME.to_owned(), org_page).unwrap();
 
                             HttpResponse::new(http::StatusCode::OK)
                                 .set_body(Body::from(body))
@@ -129,12 +132,12 @@ pub fn add_associate_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, or
                                 "err_msg": err_msg,
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                (dir::org_path(org_id), org.name.clone()),
+                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
                             ]);
 
-                            let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
+                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
 
                             let org_page = data.handlebars.render("org/org_root", &json!({
                                 "header": header,
@@ -205,7 +208,25 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
                                 let password: String = util::gen_password(8);
 
                                 match data.register_user(&user, &password, true)  {
-                                    Ok(_) => {
+                                    Ok(user_id) => {
+                                        if let Ok(link_token) = data.link_manager.create_link(link::Link::ChangePassword(user_id), std::time::Duration::from_secs(dir::CHANE_PASSWORD_LINK_TIMEOUT_SECS)) {
+                                            // send email.
+                                            let link: String = "/user/change_password/".to_string() + &link_token.to_string();
+                                            let addr: String = form.email.clone();
+                    
+                                            let subtitle: String = "<a href=\"".to_owned() + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
+                    
+                                            if let Err(e) = data.send_email(
+                                                &addr, 
+                                                "Senior Duke - Change Your Password", 
+                                                "Change Password",
+                                                &subtitle, 
+                                                ""
+                                            ) {
+                                                println!("Failed to send email: {}", e);
+                                            }
+                                        }
+
                                         let mut attrs: String = String::new();
 
                                         attrs += &data.handlebars.render("user/user_attribute", &json!({
@@ -225,12 +246,12 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
                                             "attributes": attrs,
                                         })).unwrap();
             
-                                        let header: String = page::path_header(&data, &[
-                                            (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                            (dir::org_path(org_id), org.name.clone()),
+                                        let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                            (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                            (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
                                         ]);
             
-                                        let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+                                        let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::CLIENTS_PAGE);
             
                                         let org_page = data.handlebars.render("org/org_root", &json!({
                                             "header": header,
@@ -245,7 +266,7 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
 
                                     },
                                     Err(login::LoginEntryError::UsernameExists) =>  add_associate_page(data, req, org_path_str, "This email is associated with another account!"),
-                                    Err(e) =>  add_associate_page(data, req, org_path_str, "Something went wrong: ensure that the email is unique!"),
+                                    Err(e) =>  add_associate_page(data, req, org_path_str, &format!("Something went wrong: ensure that the email is unique: {}", e)),
                                 }   
                             } else {
                                 add_associate_page(data, req, org_path_str, "Invalid teacher details provided!")

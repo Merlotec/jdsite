@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-use crate::user::{User, UserKey, UserAgent};
+use crate::user::{User, UserKey};
 use crate::{db, dir, define_uuid_key, org};
 use std::time::{SystemTime, Duration};
 use std::path::Path;
@@ -94,20 +94,14 @@ pub struct AuthContext {
 
 impl AuthContext {
     pub fn root_page(&self) -> String {
-        match self.user.user_agent {
-            UserAgent::Owner => dir::ORGS_PAGE.to_owned(),
-            UserAgent::Admin => dir::ORGS_PAGE.to_owned(),
-            UserAgent::Orginisation(org_id) => dir::org_path(org_id),
-            UserAgent::Associate(org_id) => dir::org_path(org_id),
-            UserAgent::Client { org_id, .. } => dir::client_path(org_id, self.user_id),
-        }
+        self.user.user_agent.root_page(self.user_id)
     }
 
-    pub fn org_items(&self, org_id: org::OrgKey) -> Vec<(String, String)> {
+    pub fn org_items(&self, org_id: org::OrgKey, org: &org::Org) -> Vec<(String, String)> {
         vec![
-            (dir::org_path(org_id) + dir::CLIENTS_PAGE, "Pupils".to_owned()),
-            (dir::org_path(org_id) + dir::ASSOCIATES_PAGE, "Teachers".to_owned()),
-            (dir::org_path(org_id) + dir::UNREVIEWED_SECTIONS_PAGE, "Unreviewed Sections".to_owned()),
+            (dir::org_path(org_id) + dir::CLIENTS_PAGE, "Pupils (".to_owned() + &org.clients.len().to_string() + ")"),
+            (dir::org_path(org_id) + dir::ASSOCIATES_PAGE, "Teachers (".to_owned() + &org.associates.len().to_string() + ")"),
+            (dir::org_path(org_id) + dir::UNREVIEWED_SECTIONS_PAGE, "Unreviewed Sections (".to_owned() + &org.unreviewed_sections.len().to_string() + ")"),
         ]
     }
 }

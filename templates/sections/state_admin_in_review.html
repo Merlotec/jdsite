@@ -1,0 +1,41 @@
+<div class="horizontal-separator"></div>
+
+<script>
+    function validateFeedback() {
+        var feedbackInput = document.getElementById('feedback');
+
+        var button = document.getElementById('feedbackSubmit');
+        if (feedbackInput.value == null || feedbackInput.value.trim().length == 0) {
+            button.disabled = true;
+            button.className = 'submit-button-disabled';
+        } else {
+            button.disabled = false;
+            button.className = 'submit-button';
+        }
+    }
+</script>
+
+<div class="center-content-narrow">
+    <h3>Mark as Not Approved - Provide Feedback</h3>
+    <p>
+        If you feel that the pupil has not completed the section to an adquate level, you can tell the them what to change below and mark the section as not approved:
+    </p>
+    <form method="POST" action="{{set_state_url}}">
+        <textarea id="feedback" name="feedback" class="input-area" rows="7" placeholder="Feedback..." onkeyup="validateFeedback()">{{reflection}}</textarea>
+        <br>
+        <input id="state" name="state" type="hidden" value="Rejected"/>
+        <input id="feedbackSubmit" type="submit" class="submit-button-disabled" disabled="true" value="Mark as Not Approved"/>
+    </form>
+    
+    <br>
+
+    <h3>Mark as Complete</h3>
+    <p>
+        If you feel that the pupil has fulfilled all the necessary criteria, you can mark the section as complete.
+        Once this is done neither you or the pupil can make any further changes to the section.
+    </p>
+    <form method="POST" action="{{set_state_url}}">
+        <input id="state" name="state" type="hidden" value="Completed"/>
+        <input type="submit" class="submit-button" value="Mark as Complete"/>
+    </form>
+</div>

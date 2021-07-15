@@ -1,0 +1,13 @@
+<div class="horizontal-separator"></div>
+<div class="center-content-narrow">
+    <h3 class="state-in-review">Section Currently In-Review</h3>
+    <p>
+        This section has been sent to your teachers to review.
+        Hopefully they should get back to you soon to give you feedback.
+        If you no longer want your teachers to review this section in its current state, click the cancel button below.
+    </p>
+    <form method="POST" action="{{set_state_url}}">
+        <input id="state" name="state" type="hidden" value="InProgress"/>
+        <input type="submit" class="submit-button" value="Cancel Review"/>
+    </form>
+</div>

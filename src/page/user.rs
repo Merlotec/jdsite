@@ -15,7 +15,7 @@ use crate::data::SharedData;
 
 use crate::page;
 use crate::dir;
-use crate::org;
+
 use crate::user;
 
 use actix_web::{get, post};
@@ -122,7 +122,7 @@ pub async fn delete_user_post(data: web::Data<Arc<SharedData>>, req: HttpRequest
                                 r.body("")
                             },
                             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                            .set_body(Body::from("Failed to delete user!")),
+                            .set_body(Body::from(format!("Failed to delete use: {}!", e))),
                         }
                         
                     } else {

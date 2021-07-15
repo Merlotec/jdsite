@@ -4,6 +4,8 @@ pub mod clients;
 pub mod user;
 pub mod associates;
 pub mod section;
+pub mod unreviewed;
+pub mod outstanding;
 
 use std::sync::Arc;
 
@@ -21,6 +23,7 @@ use actix_web::{
 use crate::{
     auth::AuthContext,
     data::SharedData,
+    user::Privilege,
     dir,
     org,
 };
@@ -73,8 +76,8 @@ pub fn render_page(ctx: Option<AuthContext>, data: &SharedData, title: String, h
     }))?)
 }
 
-pub fn org_nav(ctx: &AuthContext, data: &SharedData, org_id: org::OrgKey, path: String) -> String {
-    let org_items = ctx.org_items(org_id);
+pub fn org_nav(ctx: &AuthContext, data: &SharedData, org_id: org::OrgKey, org: &org::Org, path: String) -> String {
+    let org_items = ctx.org_items(org_id, org);
 
     let mut org_nav: String = String::new();
 
@@ -97,18 +100,25 @@ pub fn org_nav(ctx: &AuthContext, data: &SharedData, org_id: org::OrgKey, path: 
     org_nav
 }
 
-pub fn path_header(data: &SharedData, items: &[(String, String)]) -> String {
+pub fn path_header(data: &SharedData, user_privilage: &Privilege, items: &[(String, String, Privilege)]) -> String {
     let mut header: String = String::new();
 
-    for (i, (url, title)) in items.iter().enumerate() {
-        if i != 0 {
-            header += " > ";
-        }
+    let mut is_first = true;
 
-        header += &data.handlebars.render("shared/header_item", &json!({
-            "text": title,
-            "url": url,
-        })).unwrap();
+    for (url, title, privilege) in items.iter() {
+        if user_privilage.magnitude() >= privilege.magnitude() {
+            if !is_first {
+                header += " > ";
+            }
+    
+            header += &data.handlebars.render("shared/header_item", &json!({
+                "text": title,
+                "url": url,
+            })).unwrap();
+
+            is_first = false;
+        }
+        
     }
 
     return header;

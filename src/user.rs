@@ -1,4 +1,4 @@
-use crate::{db, define_uuid_key, org::OrgKey, section::SectionKey};
+use crate::{db, define_uuid_key, org::OrgKey, section::SectionKey, dir};
 
 use serde::{Serialize, Deserialize};
 
@@ -17,13 +17,29 @@ impl User {
         self.forename.clone() + " " + &self.surname
     }
 }
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+pub enum Privilege {
+    RootLevel,
+    OrgLevel,
+    ClientLevel,
+}
+
+impl Privilege {
+    pub fn magnitude(&self) -> i32 {
+        match self {
+            Privilege::ClientLevel => 1,
+            Privilege::OrgLevel => 2,
+            Privilege::RootLevel => 3,
+        }
+    }
+}
 
 /// Contains all the different types of user.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum UserAgent {
     Owner,
     Admin,
-    Orginisation(OrgKey),
+    Organisation(OrgKey),
     Associate(OrgKey),
     Client {
         org_id: OrgKey,
@@ -38,6 +54,26 @@ impl UserAgent {
             true
         } else {
             false
+        }
+    }
+
+    pub fn root_page(&self, user_id: UserKey) -> String {
+        match self {
+            UserAgent::Owner => dir::ORGS_PAGE.to_owned(),
+            UserAgent::Admin => dir::ORGS_PAGE.to_owned(),
+            UserAgent::Organisation(org_id) => dir::org_path(*org_id),
+            UserAgent::Associate(org_id) => dir::org_path(*org_id),
+            UserAgent::Client { org_id, .. } => dir::client_path(*org_id, user_id),
+        }
+    }
+
+    pub fn privilege(&self) -> Privilege {
+        match self {
+            UserAgent::Owner => Privilege::RootLevel,
+            UserAgent::Admin => Privilege::RootLevel,
+            UserAgent::Organisation(_) => Privilege::OrgLevel,
+            UserAgent::Associate(_) => Privilege::OrgLevel,
+            UserAgent::Client { .. } => Privilege::ClientLevel,
         }
     }
 
@@ -61,7 +97,7 @@ impl UserAgent {
         match self {
             UserAgent::Owner => true,
             UserAgent::Admin => true,
-            UserAgent::Orginisation(agent_org_id) => agent_org_id == org_id,
+            UserAgent::Organisation(agent_org_id) => agent_org_id == org_id,
             UserAgent::Associate(agent_org_id) => agent_org_id == org_id,
             UserAgent::Client { .. } => false,
         }
@@ -71,7 +107,7 @@ impl UserAgent {
         match self {
             UserAgent::Owner => true,
             UserAgent::Admin => true,
-            UserAgent::Orginisation(agent_org_id) => agent_org_id == org_id,
+            UserAgent::Organisation(agent_org_id) => agent_org_id == org_id,
             UserAgent::Associate(_) => false,
             UserAgent::Client { .. } => false,
         }
@@ -81,7 +117,17 @@ impl UserAgent {
         match self {
             UserAgent::Owner => true,
             UserAgent::Admin => other != &UserAgent::Owner && other != &UserAgent::Admin,
-            UserAgent::Orginisation(agent_org_id) => other.org_id() == Some(*agent_org_id),
+            UserAgent::Organisation(agent_org_id) => other.org_id() == Some(*agent_org_id),
+            UserAgent::Associate(_) => false,
+            UserAgent::Client { .. } => false,
+        }
+    }
+
+    pub fn can_view_outstanding(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            UserAgent::Organisation(_) => false,
             UserAgent::Associate(_) => false,
             UserAgent::Client { .. } => false,
         }
@@ -91,7 +137,7 @@ impl UserAgent {
         match self {
             UserAgent::Owner => true,
             UserAgent::Admin => other != &UserAgent::Owner && other != &UserAgent::Admin,
-            UserAgent::Orginisation(agent_org_id) => other.org_id() == Some(*agent_org_id),
+            UserAgent::Organisation(agent_org_id) => other.org_id() == Some(*agent_org_id),
             UserAgent::Associate(agent_org_id) => other.org_id() == Some(*agent_org_id),
             UserAgent::Client { .. } => false,
         }
@@ -101,7 +147,7 @@ impl UserAgent {
         match self {
             UserAgent::Owner => "Owner".to_owned(),
             UserAgent::Admin => "Global Administrator".to_owned(),
-            UserAgent::Orginisation(_) => "Organisation Administrator".to_owned(),
+            UserAgent::Organisation(_) => "Organisation Administrator".to_owned(),
             UserAgent::Associate(_) => "Teacher".to_owned(),
             UserAgent::Client { .. } => "Pupil".to_owned(),
         }
@@ -111,7 +157,7 @@ impl UserAgent {
         match self {
             UserAgent::Owner => None,
             UserAgent::Admin => None,
-            UserAgent::Orginisation(org_id) => Some(*org_id),
+            UserAgent::Organisation(org_id) => Some(*org_id),
             UserAgent::Associate(org_id) => Some(*org_id),
             UserAgent::Client { org_id, .. } => Some(*org_id),
         }

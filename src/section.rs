@@ -1,6 +1,7 @@
 
 use crate::{db, define_uuid_key, user};
 use serde::{Serialize, Deserialize};
+use std::time::SystemTime;
 
 
 pub struct SectionInfo {
@@ -16,10 +17,11 @@ pub struct Activity {
     pub activity_url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SectionState {
     InProgress,
-    InReview,
+    Rejected(String),
+    InReview(SystemTime),
     Completed,
 }
 
@@ -27,18 +29,54 @@ impl ToString for SectionState {
     fn to_string(&self) -> String {
         match self {
             SectionState::InProgress => "In Progress".to_owned(),
-            SectionState::InReview => "In Review".to_owned(),
+            SectionState::Rejected(_) => "Not Approved".to_owned(),
+            SectionState::InReview(_) => "In Review".to_owned(),
             SectionState::Completed => "Completed".to_owned(),
         }
     }
 }
 
 impl SectionState {
+    pub fn is_completed(&self) -> bool {
+        if let SectionState::Completed = self {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn css_class(&self) -> String {
         match self {
             SectionState::InProgress => "state-in-progress".to_owned(),
-            SectionState::InReview => "state-in-review".to_owned(),
+            SectionState::Rejected(_) => "state-rejected".to_owned(),
+            SectionState::InReview(_) => "state-in-review".to_owned(),
             SectionState::Completed => "state-completed".to_owned(),
+        }
+    }
+
+    pub fn css_color(&self) -> String {
+        match self {
+            SectionState::InProgress => "rgb(175, 175, 175)".to_owned(),
+            SectionState::Rejected(_) => "red".to_owned(),
+            SectionState::InReview(_) => "orange".to_owned(),
+            SectionState::Completed => "green".to_owned(),
+        }
+    }
+
+    pub fn is_restricted(&self) -> bool {
+        match self {
+            SectionState::InProgress => false,
+            SectionState::Rejected(_) => true,
+            SectionState::InReview(_) => false,
+            SectionState::Completed => true,
+        }
+    }
+
+    pub fn time(&self) -> Option<SystemTime> {
+        if let SectionState::InReview(time) = self {
+            Some(time.clone())
+        } else {
+            None
         }
     }
 }
@@ -51,23 +89,23 @@ impl Default for SectionState {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Section {
+    pub section_index: usize,
     pub activity_index: usize,
     pub user_id: user::UserKey,
     pub plan: String,
     pub reflection: String,
-    pub assets: Vec<String>,
     pub state: SectionState,
     pub outstanding: bool,
 }
 
 impl Section {
-    pub fn new(activity_index: usize, user_id: user::UserKey) -> Self {
+    pub fn new(section_index: usize, activity_index: usize, user_id: user::UserKey) -> Self {
         Self {
+            section_index,
             activity_index,
             user_id,
             plan: String::new(),
             reflection: String::new(),
-            assets: Vec::new(),
             state: SectionState::InProgress,
             outstanding: false,
         }

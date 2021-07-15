@@ -30,6 +30,7 @@ impl fmt::Display for AuthError {
 
 #[derive(Debug)]
 pub enum LoginEntryError {
+    NotUnique,
     UsernameExists,
     //PasswordInvalid(String),
     DbError(db::Error),
@@ -39,6 +40,7 @@ impl fmt::Display for LoginEntryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             LoginEntryError::UsernameExists => write!(f, "An account with the given username already exists!"),
+            LoginEntryError::NotUnique => write!(f, "An account with similar characteristics exists where it should not!"),
             //LoginEntryError::PasswordInvalid(ref s) => write!(f, "Password invalid: {}!", s),
             LoginEntryError::DbError(e) => e.fmt(f),
         }

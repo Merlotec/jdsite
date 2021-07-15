@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use std::str::FromStr;
 
 use actix_web::{
@@ -17,6 +17,8 @@ use crate::page;
 use crate::dir;
 use crate::org;
 use crate::util;
+use crate::link;
+use crate::user;
 
 use actix_web::{get, post};
 
@@ -40,28 +42,29 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                 let mut rows: String = String::new();
 
                 data.org_db.for_each(|org_id, org| {
-                    let admin: String = {
+                    let (admin, admin_url): (String, String) = {
                         if let Some(user_id) = org.admin {
                             if let Ok(Some(admin_user)) = data.user_db.fetch(&user_id) {
-                                admin_user.name()
+                                (admin_user.email, dir::USER_ROOT_PATH.to_owned() + "/" + &user_id.to_string())
                             } else {
-                                data.handlebars.render("org/assign_admin", &json!({
-                                    "org_id": org_id,
-                                    "org_name": &org.name,
-                                })).unwrap()
+                                ("Error!".to_owned(), String::new())
                             }
                         } else {
+                            /*
                             data.handlebars.render("org/assign_admin", &json!({
                                 "org_id": org_id,
                                 "org_name": &org.name,
                             })).unwrap()
+                            */
+                            (String::new(), String::new())
                         }
                     };
 
                     rows += &data.handlebars.render("org/org_row", &json!({
                         "org_url": dir::org_path(org_id),
                         "org_id": org_id,
-                        "admin": admin,
+                        "admin_email": admin,
+                        "admin_url": admin_url,
                         "name": org.name,
                         "unreviewed_sections": org.unreviewed_sections.len(),
                         "teachers": org.associates.len(),
@@ -144,7 +147,7 @@ pub async fn delete_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_delete_orgs() {
-                match data.org_db.remove_silent(&form.org_id) {
+                match data.delete_org(&form.org_id) {
                     Ok(_) => {
                         let mut r = HttpResponse::SeeOther();
                         r.header(http::header::LOCATION, dir::ORGS_PAGE);
@@ -176,9 +179,34 @@ pub async fn assign_admin_post(data: web::Data<Arc<SharedData>>, req: HttpReques
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_view_orgs() {
-                let mut r = HttpResponse::SeeOther();
+                match data.link_manager.create_link(
+                    link::Link::CreateUser(user::UserAgent::Organisation(form.org_id)), 
+                    Duration::from_secs(dir::ASSIGN_ADMIN_LINK_TIMEOUT_SECS)
+                ) {
+                    Ok(link_token) => {
+                        // Send email
+                        let link: String = "/user/create_account/".to_string() + &link_token.to_string();
+                        let addr: String = form.email.clone();
+
+                        let subtitle = "<a href=\"".to_owned() + &link + "\">" + "Click here</a> to create your organisation account.";
+
+                        if let Err(e) = data.send_email(
+                            &addr, 
+                            "Senior Duke - Create Your Account", 
+                            "Create Organisation Account",
+                             &subtitle, 
+                             ""
+                        ) {
+                            println!("Failed to send email: {}", e);
+                        }
+
+                        let mut r = HttpResponse::SeeOther();
                         r.header(http::header::LOCATION, dir::ORGS_PAGE);
                         r.body("")
+                    },
+                    Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                        .set_body(Body::from(format!("Error: {}", e))),
+                }        
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }

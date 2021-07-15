@@ -4,13 +4,15 @@
         <h2>
             Login
         </h2>
-        <h3 style="text-align: center;">Enter your login details below</h3>
+        <h4 style="text-align: center;">Enter your login details below</h4>
         <br>
         <p class="err-text">{{login_err_msg}}</p>
         <form style="text-align: center; margin: 0 auto;" method="POST" action="{{{login_url}}}">
             <input name="username" class="input-box" type="text" placeholder="Username"></input>
             <br><br>
             <input name="password" class="input-box" type="password" placeholder="Password"></input>
+            <br>
+            <a class="italic-small text-button" href="{{reset_password_url}}">Reset Password</a>
             <br><br><br>
             <input style="margin: auto;" class="submit-button" type="submit" value="Login"/>
         </form>

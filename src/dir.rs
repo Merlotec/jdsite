@@ -3,6 +3,9 @@ use crate::*;
 // Misc
 pub const AUTH_COOKIE: &'static str = "Auth";
 pub const LOGIN_REDIRECT_COOKIE: &'static str = "LoginRedirect";
+pub const ASSIGN_ADMIN_LINK_TIMEOUT_SECS: u64 = 60 * 60 * 24 * 5;
+pub const CHANE_PASSWORD_LINK_TIMEOUT_SECS: u64 = 60 * 60 * 24 * 5;
+
 pub const APP_NAME: &'static str = "Senior Duke Portal";
 
 pub const USER_ROOT_PATH: &'static str = "/user";
@@ -24,7 +27,7 @@ pub const LOGOUT_PATH: &'static str = "/logout";
 pub const ORGS_PAGE: &'static str = "/orgs";
 pub const ORGS_TITLE: &'static str = "Organisations";
 
-pub const OA_PAGE: &'static str = "/achievements";
+pub const OA_PAGE: &'static str = "/outstanding";
 pub const OA_TITLE: &'static str = "Outstanding Achievements";
 
 pub const DELETE_USER_PATH: &'static str = "/delete_user";
@@ -52,6 +55,7 @@ pub const ASSOCIATES_PAGE: &'static str = "/associates";
 pub const ASSOCIATES_TITLE: &'static str = "Teachers";
 
 pub const UNREVIEWED_SECTIONS_PAGE: &'static str = "/unreviewed";
+pub const UNREVIEWED_SECTIONS_TITLE: &'static str = "Unreviewed Sections";
 
 pub const ADD_ASSOCIATE_PATH: &'static str = "/add_associate";
 

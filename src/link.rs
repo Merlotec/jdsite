@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use crate::user::{UserAgent, UserKey};
 use std::time::{Duration, SystemTime};
 use std::path::Path;
-use crate::{db, define_uuid_key, dir};
+use crate::{db, define_uuid_key};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Link {

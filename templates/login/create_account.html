@@ -1,0 +1,35 @@
+<div class="center-content">
+    <h2 style="text-align: center;">Create Senior Duke Account</h2>
+    <h4 style="text-align: center;">{{account_info}}</h4>
+    <p class="err-text">{{err_msg}}</p>
+    <form class="center-form" method="POST" action="{{create_account_url}}">
+        <div class="adjacent-input-section" style="padding-right: 5px;">
+            <span class="input-item-title">Forename</span>
+            <br>
+            <input id="addAssociateName" name="forename" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Forename"></input>
+        </div>
+
+        <div class="adjacent-input-section" style="padding-left: 5px">
+            <span class="input-item-title">Surname</span>
+            <br>
+            <input id="addAssociateName" name="surname" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Surname"></input>
+        </div>
+
+        <br><br>
+        <span class="input-item-title">Email</span>
+        <br>
+        <input id="addAssociateEmail" name="email" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Email"></input>
+        <br><br>
+        <span class="input-item-title">Password</span>
+        <br>
+        <input id="addAssociatePassword" name="password" class="input-box" type="password" style="width: 100%; max-width: none;" placeholder="Password"></input>
+        <br><br>
+        <span class="input-item-title">Confirm Password</span>
+        <br>
+        <input id="addAssociateConfirm" name="confirm" class="input-box" type="password" style="width: 100%; max-width: none;" placeholder="Password"></input>
+        <br><br>
+        <br>
+        <input id="addAssociateSubmit" style="margin: auto;" class="submit-button" type="submit" value="Create Account"/>
+        <br><br>
+    </form>
+</div>

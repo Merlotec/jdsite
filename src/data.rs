@@ -1,22 +1,14 @@
 
 use crate::*;
-
+use std::sync::Mutex;
 use user::{User, UserAgent, UserKey};
 use auth::{AuthContext, AuthToken};
 use actix_web::HttpMessage;
 use std::str::FromStr;
 use std::time::Duration;
-use section::Section;
-use handlebars::{
-    Handlebars,
-    Helper,
-    RenderContext,
-    Context,
-    Output,
-    HelperResult,
-    RenderError,
-};
-
+use handlebars::Handlebars;
+use lettre::{SmtpClient, SmtpTransport, Transport, smtp::authentication::Credentials};
+use serde_json::json;
 
 pub struct SharedData {
     pub fs_root: String,
@@ -25,6 +17,10 @@ pub struct SharedData {
     pub user_db: user::UserDb,
     pub org_db: org::OrgDb,
     pub section_db: section::SectionDb,
+    pub outstanding_sections_db: db::Database<section::SectionKey, ()>,
+
+    pub noreply_addr: String,
+    pub mailer: Mutex<SmtpTransport>,
 
     pub sections: [section::SectionInfo; 6],
 
@@ -42,6 +38,19 @@ impl SharedData {
         let user_db = user::UserDb::open(fs_root.clone() + "/user.sleddb")?;
         let org_db = org::OrgDb::open(fs_root.clone() + "/org.sleddb")?;
         let section_db = section::SectionDb::open(fs_root.clone() + "/section.sleddb")?;
+        let outstanding_sections_db = db::Database::open(fs_root.clone() + "/outstanding_sections.sleddb")?;
+
+        let noreply_addr = "noreply@juniorduke.com".to_owned();
+        let creds = Credentials::new(
+            noreply_addr.clone(),
+            "Haggis21".to_owned(),
+        );
+    
+        // Open a remote connection to gmail
+        let mailer = SmtpClient::new_simple("smtp.34sp.com")
+            .unwrap()
+            .credentials(creds)
+            .transport();
 
         let sections: [section::SectionInfo; 6] = section::SectionInfo::sections_list();
 
@@ -59,6 +68,10 @@ impl SharedData {
             user_db,
             org_db,
             section_db,
+            outstanding_sections_db,
+
+            noreply_addr,
+            mailer: Mutex::new(mailer),
 
             sections,
 
@@ -100,7 +113,7 @@ impl SharedData {
             Some(auth_token) => {
                 match AuthToken::from_str(auth_token.value()) {
                     Ok(auth_token) => self.auth_manager.destroy_session(&auth_token),
-                    Err(e) => Ok(()),
+                    Err(_) => Ok(()),
                 }
                 
             },
@@ -146,6 +159,21 @@ impl SharedData {
                                                 }
                                             }
                                         },
+                                        UserAgent::Organisation(org_id) => {
+                                            if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                                                if org.admin.is_none() {
+                                                    org.admin = Some(user_id);
+                                                    if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                                        println!("Failed to update org db for new org admin! {}", e);
+                                                    }
+                                                } else {
+                                                    let _ = self.user_db.remove_silent(&user_id);
+                                                    let _ = self.login_db.db().remove_silent(&user.email);
+
+                                                    return Err(login::LoginEntryError::NotUnique);
+                                                }
+                                            }
+                                        }
                                         _ => {},
                                     }
                                     Ok(user_id)
@@ -169,31 +197,71 @@ impl SharedData {
         
     }
 
-    pub fn delete_user(&self, user_id: &UserKey) -> Result<(), db::Error> {
+    fn delete_user_entry(&self, user_id: &UserKey) -> Result<Option<User>, db::Error> {
         match self.user_db.remove(user_id) {
             Ok(Some(user)) => {
                 if let Err(e) = self.login_db.db().remove_silent(&user.email) {
                     println!("Failed to delete login entry! {}", e);
                 }
-                match user.user_agent {
-                    UserAgent::Client { org_id, .. } => {
-                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                            org.clients.retain(|x| x != user_id);
-                            org.credits += 1;
-                            if let Err(e) = self.org_db.insert(&org_id, &org) {
-                                println!("Failed to update org db for new client! {}", e);
-                            }
+                Ok(Some(user))
+            },
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
+
+        }
+    }
+
+    pub fn delete_user(&self, user_id: &UserKey) -> Result<(), db::Error> {
+        let user = self.delete_user_entry(user_id)?;
+        if let Some(user) = user {
+            match user.user_agent {
+                UserAgent::Client { org_id, .. } => {
+                    if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                        org.clients.retain(|x| x != user_id);
+                        org.credits += 1;
+                        if let Err(e) = self.org_db.insert(&org_id, &org) {
+                            println!("Failed to update org db for new client! {}", e);
                         }
-                    },
-                    UserAgent::Associate(org_id) => {
-                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                            org.associates.retain(|x| x != user_id);
+                    }
+                },
+                UserAgent::Associate(org_id) => {
+                    if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                        org.associates.retain(|x| x != user_id);
+                        if let Err(e) = self.org_db.insert(&org_id, &org) {
+                            println!("Failed to update org db for new associate! {}", e);
+                        }
+                    }
+                },
+                UserAgent::Organisation(org_id) => {
+                    if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                        if org.admin == Some(*user_id) {
+                            org.admin = None;
                             if let Err(e) = self.org_db.insert(&org_id, &org) {
                                 println!("Failed to update org db for new associate! {}", e);
                             }
                         }
-                    },
-                    _ => {},
+                    }
+                },
+                _ => {},
+            }
+        }
+        
+        Ok(())
+    }
+
+    pub fn delete_org(&self, org_id: &org::OrgKey) -> Result<(), db::Error> {
+        match self.org_db.remove(org_id) {
+            Ok(Some(org)) => {
+                for user_id in org.clients {
+                    if let Err(e) = self.delete_user(&user_id) {
+                        println!("Failed to delete client {}: {}", user_id.to_string(), e);
+                    }
+                }
+
+                for user_id in org.associates {
+                    if let Err(e) = self.delete_user(&user_id) {
+                        println!("Failed to delete associate {}: {}", user_id.to_string(), e);
+                    }
                 }
                 Ok(())
             },
@@ -246,10 +314,53 @@ impl SharedData {
         }
     }
 
+    pub fn delete_section(&self, section_id: &section::SectionKey) -> Result<(), db::Error> {
+        match self.section_db.remove(section_id) {
+            Ok(Some(section)) => {
+                let _ = self.outstanding_sections_db.remove_silent(section_id);
+
+                if let Ok(Some(mut client)) = self.user_db.fetch(&section.user_id) {
+                    let mut changed = false;
+                    if let UserAgent::Client { org_id, sections, .. } = &mut client.user_agent {
+                        for section in sections.iter_mut() {
+                            if let Some(user_section_id) = section {
+                                if user_section_id == section_id {
+                                    *section = None;
+                                    changed = true;
+                                }
+                            }
+                        }
+                        if let Ok(Some(mut org)) = self.org_db.fetch(org_id) {
+                            let len = org.unreviewed_sections.len();
+
+                            org.unreviewed_sections.retain(|x| x != section_id);
+
+                            if len != org.unreviewed_sections.len() {
+                                if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                    println!("Failed to update org: {}", e);
+                                }
+                            }
+                        }
+                    }
+
+                    if changed {
+                        if let Err(e) = self.user_db.insert(&section.user_id, &client) {
+                            println!("Failed to update client: {}", e);
+                        }
+                    }
+                    
+                }
+                Ok(())
+            },
+            Ok(None) => Ok(()),
+            Err(e) => Err(e),
+        }
+    }
+
     pub fn nav_items_for_context(&self, ctx: Option<AuthContext>) -> Vec<(String, String)> {
         match ctx {
             Some(ctx) => self.nav_items_for_agent(&ctx.user_id, &ctx.user.user_agent),
-            None => Vec::new(),
+            None => vec![(dir::LOGIN_PAGE.to_owned(), dir::LOGIN_TITLE.to_owned())],
         }
         
     }
@@ -264,12 +375,13 @@ impl SharedData {
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
-            UserAgent::Orginisation(org_id) => vec! [
-                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string(), dir::CLIENTS_TITLE.to_string()),
-                //(dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
+            UserAgent::Organisation(org_id) => vec! [
+                (dir::org_path(*org_id) + dir::CLIENTS_PAGE, dir::CLIENTS_TITLE.to_string()),
+                (dir::org_path(*org_id) + dir::UNREVIEWED_SECTIONS_PAGE, dir::UNREVIEWED_SECTIONS_TITLE.to_string()),
             ],
             UserAgent::Associate(org_id) => vec! [
-                (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string(), dir::CLIENTS_TITLE.to_string()),
+                (dir::org_path(*org_id) + dir::CLIENTS_PAGE, dir::CLIENTS_TITLE.to_string()),
+                (dir::org_path(*org_id) + dir::UNREVIEWED_SECTIONS_PAGE, dir::UNREVIEWED_SECTIONS_TITLE.to_string()),
             ],
             UserAgent::Client { org_id, .. } => vec! [
                 (dir::ORG_ROOT_PATH.to_string() + "/" + &org_id.to_string() + dir::CLIENT_ROOT_PATH + "/" + &user_key.to_string(), dir::SECTIONS_TITLE.to_string()),
@@ -283,5 +395,28 @@ impl SharedData {
 
     pub fn path_for_asset(&self, section_id: &section::SectionKey, filename: &str) -> String {
         format!("{}/sections/{}/{}", &self.fs_root, section_id.to_string(), filename)
+    }
+
+    pub fn send_email(&self, address: &str, subject: &str, title: &str, subtitle: &str, content: &str) -> Result<lettre::smtp::response::Response, lettre::smtp::error::Error> {
+        let body: String = self.handlebars.render("email/email", &json!({
+            "title": title,
+            "subtitle": subtitle,
+            "content": content,
+        })).unwrap();
+
+        let email = lettre_email::Email::builder()
+        // Addresses can be specified by the tuple (email, alias)
+        .to(address)
+        // ... or by an address only
+        .from(self.noreply_addr.clone())
+        .subject(subject)
+        .body(body)
+        .header(("Content-Type", "text/html"))
+        .build()
+    
+        .unwrap();
+
+        let mut mailer = self.mailer.lock().unwrap();
+        mailer.send(email.into())
     }
 }

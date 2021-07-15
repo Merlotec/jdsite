@@ -1,6 +1,6 @@
-#![feature(proc_macro_hygiene)]
-use actix_web::{App, HttpRequest, HttpResponse, HttpServer, Responder, Result,  error::ErrorNotFound, http, web};
-use actix_files::{NamedFile, Files};
+
+use actix_web::{App, HttpServer, HttpRequest, Result,  error::ErrorNotFound, web, middleware};
+use actix_files::NamedFile;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     
     
     /*
-    data.register_user(&user::User {
+    let _ = data.register_user(&user::User {
         email: "ncbmknight@gmail.com".to_owned(),
         forename: "Brodie".to_owned(),
         surname: "Knight".to_owned(),
@@ -78,7 +78,13 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || { 
         App::new()
             .data(data.clone())
-            //User
+            // Prevent caching of dynamic data.
+            .wrap(middleware::DefaultHeaders::new()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("expires", "0")
+            )
+            // User
             .service(page::user::user_get)
             .service(page::user::delete_user_post)
             // Login
@@ -87,6 +93,10 @@ async fn main() -> std::io::Result<()> {
             .service(page::login::logout_get)
             .service(page::login::change_password_get)
             .service(page::login::change_password_post)
+            .service(page::login::create_account_get)
+            .service(page::login::create_account_post)
+            .service(page::login::reset_password_get)
+            .service(page::login::reset_password_post)
             // Org
             .service(page::orgs::org_get)
             .service(page::orgs::orgs_get)
@@ -105,9 +115,17 @@ async fn main() -> std::io::Result<()> {
             .service(page::associates::add_associate_post)
             // Sections
             .service(page::section::section_get)
+            .service(page::section::section_id_get)
             .service(page::section::select_activity_post)
             .service(page::section::upload_section_post)
+            .service(page::section::set_state_post)
+            .service(page::section::set_outstanding_post)
+            .service(page::section::delete_section_get)
             .service(page::section::asset_get)
+            // Unreviewed
+            .service(page::unreviewed::unreviewed_get)
+            // Outstanding
+            .service(page::outstanding::outstanding_get)
             // Root
             .service(page::root_get)
             // Static files

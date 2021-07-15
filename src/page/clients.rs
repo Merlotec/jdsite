@@ -18,6 +18,10 @@ use crate::org;
 use crate::user;
 use crate::util;
 use crate::login;
+use crate::section;
+use crate::link;
+
+use user::Privilege;
 
 use actix_web::{get, post};
 
@@ -34,16 +38,44 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                             for user_id in org.clients.iter() {
                                 match data.user_db.fetch(user_id) {
                                     Ok(Some(user)) => {
-                                        if let user::UserAgent::Client { org_id: client_org_id, .. } = user.user_agent {
-                                            if client_org_id == org_id {
+                                        if let user::UserAgent::Client { org_id: client_org_id, class, sections } = &user.user_agent {
+                                            if client_org_id == &org_id {
+
+                                                // Get section info
+                                                let mut unreviewed: u32 = 0;
+                                                //let mut completed: u32 = 0;
+
+                                                let section_styles: Vec<String> = sections.iter().map(|x| {
+                                                    if let Some(section_id) = x {
+                                                        if let Ok(Some(section)) = data.section_db.fetch(&section_id) {
+                                                            if let section::SectionState::InReview(_) = section.state {
+                                                                unreviewed += 1;
+                                                            }
+                                                            let border: &str = {
+                                                                if section.outstanding {
+                                                                    "border: 1px solid pink;"
+                                                                } else {
+                                                                    "border: none;"
+                                                                }
+                                                            };
+                                                            "background-color: ".to_owned() + &section.state.css_color() + "; " + border
+                                                        } else {
+                                                            "".to_owned()
+                                                        }
+                                                    } else {
+                                                        "".to_owned()
+                                                    }
+                                                }).collect();
+
                                                 rows += &data.handlebars.render("client/client_row", &json!({
                                                     "client_url": dir::client_path(org_id, *user_id),
                                                     "user_url": dir::user_path(*user_id),
                                                     "user_id": user_id,
                                                     "name": user.name(),
+                                                    "class": class,
                                                     "email": user.email,
-                                                    "completed_sections": "0/6",
-                                                    "unreviewed_sections": "0",
+                                                    "section_styles": section_styles,
+                                                    "unreviewed_sections": unreviewed.to_string(),
                                                 })).unwrap();
                                             }
                                         }
@@ -69,12 +101,12 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                                 "delete_user_url": dir::DELETE_USER_PATH.to_owned(),
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                (dir::org_path(org_id), org.name.clone()),
+                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
                             ]);
 
-                            let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::CLIENTS_PAGE);
 
                             let org_page = data.handlebars.render("org/org_root", &json!({
                                 "header": header,
@@ -82,7 +114,7 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                                 "body": content,
                             })).unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name, dir::APP_NAME.to_owned(), org_page).unwrap();
+                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name + " - Pupils", dir::APP_NAME.to_owned(), org_page).unwrap();
 
                             HttpResponse::new(http::StatusCode::OK)
                                 .set_body(Body::from(body))
@@ -123,12 +155,12 @@ pub fn add_client_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_p
                                 "err_msg": err_msg,
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                (dir::org_path(org_id), org.name.clone()),
+                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
                             ]);
 
-                            let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::CLIENTS_PAGE);
 
                             let org_page = data.handlebars.render("org/org_root", &json!({
                                 "header": header,
@@ -205,7 +237,25 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                                     let password: String = util::gen_password(8);
 
                                     match data.register_user(&user, &password, true)  {
-                                        Ok(_) => {
+                                        Ok(user_id) => {
+                                            if let Ok(link_token) = data.link_manager.create_link(link::Link::ChangePassword(user_id), std::time::Duration::from_secs(dir::CHANE_PASSWORD_LINK_TIMEOUT_SECS)) {
+                                                // send email.
+                                                let link: String = "/user/change_password/".to_string() + &link_token.to_string();
+                                                let addr: String = form.email.clone();
+                        
+                                                let subtitle: String = "<a href=\"".to_owned() + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
+                        
+                                                if let Err(e) = data.send_email(
+                                                    &addr, 
+                                                    "Senior Duke - Change Your Password", 
+                                                    "Change Password",
+                                                    &subtitle, 
+                                                    ""
+                                                ) {
+                                                    println!("Failed to send email: {}", e);
+                                                }
+                                            }
+                                            
                                             let mut attrs: String = String::new();
 
                                             attrs += &data.handlebars.render("user/user_attribute", &json!({
@@ -225,12 +275,12 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                                                 "attributes": attrs,
                                             })).unwrap();
                 
-                                            let header: String = page::path_header(&data, &[
-                                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                                (dir::org_path(org_id), org.name.clone()),
+                                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
                                             ]);
                 
-                                            let nav = page::org_nav(&ctx, &data, org_id, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+                                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::CLIENTS_PAGE);
                 
                                             let org_page = data.handlebars.render("org/org_root", &json!({
                                                 "header": header,
@@ -245,7 +295,7 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
 
                                         },
                                         Err(login::LoginEntryError::UsernameExists) =>  add_client_page(data, req, org_path_str, "This email is associated with another account!"),
-                                        Err(e) =>  add_client_page(data, req, org_path_str, "Something went wrong: ensure that the email is unique!"),
+                                        Err(e) =>  add_client_page(data, req, org_path_str, &format!("Something went wrong: ensure that the email is unique: {}", e)),
                                     }   
                                 } else {
                                     add_client_page(data, req, org_path_str, "Invalid pupil details provided!")
@@ -278,8 +328,8 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
 
 #[get("/org/{org}/client/{user}")]
 pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, path: web::Path<(String, String)>) -> HttpResponse {
-    if let Ok(org_id) = org::OrgKey::from_str(&path.0.0) {
-        if let Ok(user_id) = user::UserKey::from_str(&path.0.1) {
+    if let Ok(org_id) = org::OrgKey::from_str(&(path.0).0) {
+        if let Ok(user_id) = user::UserKey::from_str(&(path.0).1) {
             match data.authenticate_context_from_request(&req, true) {
                 Ok(Some(ctx)) => {
                     match data.user_db.fetch(&user_id) {
@@ -295,10 +345,18 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                                                 let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
                                                     if let Some(section_id) = sections[i] {
                                                         if let Ok(Some(section_instance)) = data.section_db.fetch(&section_id) {
+                                                            let outstanding: &str = {
+                                                                if section_instance.outstanding {
+                                                                    " - <span style=\"color: pink;\">Outstanding</span>"
+                                                                } else {
+                                                                    ""
+                                                                }
+                                                            };
+
                                                             (
                                                                section.activities[section_instance.activity_index].name.clone(), 
                                                                 "activity-chosen".to_owned(),
-                                                                section_instance.state.to_string(),
+                                                                section_instance.state.to_string() + outstanding,
                                                                 section_instance.state.css_class(),
                                                             )
                                                         } else {
@@ -334,15 +392,24 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                                                 "sections": sections_body,
                                             })).unwrap();
     
-                                            let header: String = page::path_header(&data, &[
-                                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned()), 
-                                                (dir::org_path(org_id), org.name.clone()),
-                                                (dir::client_path(org_id, user_id), user.name())
+                                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
+                                                (dir::client_path(org_id, user_id), user.name(), Privilege::ClientLevel)
                                             ]);
+
+                                            let header_properties: String = {
+                                                if ctx.user.user_agent.privilege() == Privilege::ClientLevel {
+                                                    "hidden=\"true\"".to_owned()
+                                                } else {
+                                                    String::new()
+                                                }
+                                            };
     
                                             let root: String = data.handlebars.render("client/client_root", &json!({
                                                 "header": header,
                                                 "body": body,
+                                                "header_properties": header_properties,
                                             })).unwrap();
     
                                             let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
