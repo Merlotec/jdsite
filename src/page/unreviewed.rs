@@ -36,26 +36,30 @@ pub async fn unreviewed_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                 if let Ok(Some(section)) = data.section_db.fetch(section_id) {
                                     if let Ok(Some(user)) = data.user_db.fetch(&section.user_id) {
 
-                                        let date_str: String = {
-                                            if let Some(system_time) = section.state.time() {
-                                                let datetime: chrono::DateTime<chrono::offset::Local> = system_time.into();
-                                                datetime.format("%d %B %Y at %H:%M").to_string()
-                                            } else {
-                                                "Error: No date!".to_owned()
-                                            }
-                                        };
+                                        if let Some(award) = data.awards.get(section.award_index) {
+                                            let date_str: String = {
+                                                if let Some(system_time) = section.state.time() {
+                                                    let datetime: chrono::DateTime<chrono::offset::Local> = system_time.into();
+                                                    datetime.format("%d %B %Y at %H:%M").to_string()
+                                                } else {
+                                                    "Error: No date!".to_owned()
+                                                }
+                                            };
+                                            
+    
+                                            rows += &data.handlebars.render("sections/section_row", &json!({
+                                                "client_url": dir::client_path(org_id, section.user_id),
+                                                "user_url": dir::user_path(section.user_id),
+                                                "section_url": "/section/".to_owned() + &section_id.to_string(),
+                                                "name": user.name(),
+                                                "email": user.email,
+                                                "award": &award.name,
+                                                "section": &award.sections[section.section_index].name,
+                                                "activity": &award.sections[section.section_index].activities[section.activity_index].name,
+                                                "date": date_str
+                                            })).unwrap();
+                                        }
                                         
-
-                                        rows += &data.handlebars.render("sections/section_row", &json!({
-                                            "client_url": dir::client_path(org_id, section.user_id),
-                                            "user_url": dir::user_path(section.user_id),
-                                            "section_url": "/section/".to_owned() + &section_id.to_string(),
-                                            "name": user.name(),
-                                            "email": user.email,
-                                            "section": &data.sections[section.section_index].name,
-                                            "activity": &data.sections[section.section_index].activities[section.activity_index].name,
-                                            "date": date_str
-                                        })).unwrap();
                                     }
                                 }
                             }

@@ -1,0 +1,11 @@
+<div class="user-attribute">
+    <span class="attribute-name">Email Notifications</span>
+    <br>
+    <span class="attribute-value">
+        {{#if flag}}
+            On - <a class="text-button" href="{{notifications_base_url}}/false"> Disable </a>
+        {{else}}
+            Off - <a class="text-button" href="{{notifications_base_url}}/true"> Enable </a>
+        {{/if}}
+    </span>
+</div>

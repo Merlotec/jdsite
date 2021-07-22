@@ -324,6 +324,7 @@ pub async fn create_account_post(data: web::Data<Arc<SharedData>>, req: HttpRequ
                                     forename: form.forename.clone(),
                                     surname: form.surname.clone(),
                                     email: form.email.clone(),
+                                    notifications: true,
                                     user_agent,
                                 };
                                 

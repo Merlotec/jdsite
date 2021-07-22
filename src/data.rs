@@ -22,7 +22,7 @@ pub struct SharedData {
     pub noreply_addr: String,
     pub mailer: Mutex<SmtpTransport>,
 
-    pub sections: [section::SectionInfo; 6],
+    pub awards: Vec<section::AwardInfo>,
 
     pub link_manager: link::LinkManager,
 
@@ -52,7 +52,7 @@ impl SharedData {
             .credentials(creds)
             .transport();
 
-        let sections: [section::SectionInfo; 6] = section::SectionInfo::sections_list();
+        let awards = section::AwardInfo::awards();
 
         let auth_manager = auth::AuthManager::open(fs_root.clone() + "/auth.sleddb")?;
         let link_manager = link::LinkManager::open(fs_root.clone() + "/link.sleddb")?;
@@ -73,7 +73,7 @@ impl SharedData {
             noreply_addr,
             mailer: Mutex::new(mailer),
 
-            sections,
+            awards,
 
             link_manager,
 

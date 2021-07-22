@@ -1,5 +1,5 @@
-
 use actix_web::{App, HttpServer, HttpRequest, Result,  error::ErrorNotFound, web, middleware};
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use actix_files::NamedFile;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -42,14 +42,22 @@ async fn main() -> std::io::Result<()> {
     let data: Arc<SharedData> = Arc::new(SharedData::load_from_disk("root".to_string()).expect("Failed to load database data!"));
     
     
-    /*
+    
     let _ = data.register_user(&user::User {
         email: "ncbmknight@gmail.com".to_owned(),
         forename: "Brodie".to_owned(),
         surname: "Knight".to_owned(),
+        notifications: false,
         user_agent: user::UserAgent::Owner,
     }, "Nemisite", false);
-    */
+    
+    let _ = data.register_user(&user::User {
+        email: "dawn@juniorduke.com".to_owned(),
+        forename: "Dawn".to_owned(),
+        surname: "Waugh".to_owned(),
+        notifications: false,
+        user_agent: user::UserAgent::Owner,
+    }, "miniedefe", false);
 
     //println!("{}", data.link_manager.create_link(link::Link::ChangePassword(data.login_db.db().fetch("ncbmknight@gmail.com").unwrap().unwrap().user_id), std::time::Duration::from_secs(1000)).unwrap().to_string());
 
@@ -75,6 +83,13 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
+    // https
+    let mut https_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    https_builder
+        .set_private_key_file("key.pem", SslFiletype::PEM)
+        .unwrap();
+        https_builder.set_certificate_chain_file("cert.pem").unwrap();
+
     HttpServer::new(move || { 
         App::new()
             .data(data.clone())
@@ -87,6 +102,7 @@ async fn main() -> std::io::Result<()> {
             // User
             .service(page::user::user_get)
             .service(page::user::delete_user_post)
+            .service(page::user::enable_notifications_get)
             // Login
             .service(page::login::login_get)
             .service(page::login::login_post)
@@ -134,6 +150,7 @@ async fn main() -> std::io::Result<()> {
             
     })
         .bind("0.0.0.0:80")?
+        .bind_openssl("0.0.0.0:443", https_builder)?
         .run()
         .await
 }

@@ -1,13 +1,25 @@
+<script>
+
+    function onEdit() {
+        var btn = document.getElementById('stateSubmit');
+        btn.className = 'submit-button-disabled';
+        btn.disabled = true;
+    };
+    
+</script>
+
 <div class="horizontal-separator"></div>
 <div class="center-content-narrow">
     <h3>Submit For Review</h3>
     <p>
         Once you feel that you have completed this section, you can submit it to your teachers for review. 
         They will look through the evidence that you have provided here and either mark the task as complete if they are satisfied, or ask for further evidence.
+        <br><br>
+        You can only submit the section once it has been saved.
     </p>
 
     <form method="POST" action="{{set_state_url}}">
         <input id="state" name="state" type="hidden" value="InReview"/>
-        <input type="submit" class="submit-button" value="Submit For Review"/>
+        <input id="stateSubmit" type="submit" class="submit-button" value="Submit For Review"/>
     </form>
 </div>

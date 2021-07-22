@@ -31,7 +31,15 @@
         <span class="input-item-title">Class</span>
         <br>
         <input id="addClientClass" name="class" class="input-box" type="text" style="width: 100%; max-width: none;" placeholder="Class"></input>
-        <br><br><br>
+        <br><br>
+        <span class="input-item-title" style="text-align: center; width: 100%;">Award</span>
+        <br>
+        <select name="award_index" class="form-dropdown">
+            {{#each awards}}
+                <option value="{{@index}}" class="form-option">{{this}}</option>
+            {{/each}}
+        </select>
+        <br><br>
         <input id="addClientSubmit" style="margin: auto;" class="submit-button" type="submit" value="Add Pupil"/>
         <br><br>
     </form>

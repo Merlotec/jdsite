@@ -474,7 +474,8 @@ b {
     font-weight: bold;
     text-align: left;
     float: left;
-    margin: 10px;
+    box-sizing: border-box;
+    padding: 10px;
 }
 
 .center-form {
@@ -846,3 +847,22 @@ b {
     border: 1px solid rgb(175, 175, 175);
     box-sizing: border-box;
   }
+
+.form-dropdown {
+    display: block;
+    margin: auto;
+    float: center;
+    background-color: rgb(66, 65, 78);
+    color: white;
+    padding: 10px;
+    font-size: 18px;
+    box-sizing: border-box;
+    border-radius: 5px;
+}
+
+.form-option {
+    background-color: rgb(66, 65, 78);
+    color: rgb(175, 175, 175);
+    padding: 10px;
+    font-size: 18px;
+}

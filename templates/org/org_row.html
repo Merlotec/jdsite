@@ -4,7 +4,7 @@
         {{#if admin_email}}
             <a class="simple-link" href="{{admin_url}}">{{admin_email}}</a>
         {{else}}
-            None - <span class="text-button" onclick="event.stopPropagation(); showAssignAdminModal('{{org_id}}', '{{org_name}}')">Assign Admin</span>        
+            None - <span class="text-button" onclick="event.stopPropagation(); showAssignAdminModal('{{org_id}}', '{{name}}')">Assign Admin</span>        
         {{/if}}
     </td>
     <td>{{unreviewed_sections}}</td>

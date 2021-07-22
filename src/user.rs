@@ -9,6 +9,8 @@ pub struct User {
     pub forename: String,
     pub surname: String,
     
+    pub notifications: bool,
+
     pub user_agent: UserAgent,
 }
 
@@ -32,6 +34,14 @@ impl Privilege {
             Privilege::RootLevel => 3,
         }
     }
+
+    pub fn is_root(&self) -> bool {
+        if let Privilege::RootLevel = self {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 /// Contains all the different types of user.
@@ -44,6 +54,7 @@ pub enum UserAgent {
     Client {
         org_id: OrgKey,
         class: String,
+        award_index: usize,
         sections: [Option<SectionKey>; 6],
     },
 }

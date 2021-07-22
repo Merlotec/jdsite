@@ -276,7 +276,7 @@ pub async fn section_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, pat
         if let Ok(user_id) = user::UserKey::from_str(&(path.0).1) {
             let section_index: usize = (path.0).2;
             if section_index < 6 {
-                let section = &data.sections[section_index];
+                
                 match data.authenticate_context_from_request(&req, true) {
                     Ok(Some(ctx)) => {
                         match data.user_db.fetch(&user_id) {
@@ -285,20 +285,27 @@ pub async fn section_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, pat
                                     if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
                                         match data.org_db.fetch(&org_id) {
                                             Ok(Some(org)) => {
-                                                if let user::UserAgent::Client { sections, .. } = &user.user_agent {
-                                                    match sections[section_index] {
-                                                        Some(section_id) => {
-                                                            match data.section_db.fetch(&section_id) {
-                                                                Ok(Some(ref section_instance)) => section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance).await,
-                                                                Ok(None) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                                    .set_body(Body::from("Section doesnt exist!")),
-                                                                Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                                    .set_body(Body::from(format!("Error: {}", e))),
-                                                            }
+                                                if let user::UserAgent::Client { sections, award_index, .. } = &user.user_agent {
+                                                    if let Some(award) = data.awards.get(*award_index) {
+                                                        let section = &award.sections[section_index];
+                                                        match sections[section_index] {
+                                                            Some(section_id) => {
+                                                                match data.section_db.fetch(&section_id) {
+                                                                    Ok(Some(ref section_instance)) => section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance).await,
+                                                                    Ok(None) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                                        .set_body(Body::from("Section doesnt exist!")),
+                                                                    Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                                        .set_body(Body::from(format!("Error: {}", e))),
+                                                                }
 
-                                                        },
-                                                        None => choose_activities_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section)
+                                                            },
+                                                            None => choose_activities_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section)
+                                                        }
+                                                    } else {
+                                                        HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                            .set_body(Body::from("Award index out of range!"))
                                                     }
+                                                    
                                                 } else {
                                                     panic!("Urneachable code!!!");
                                                 }
@@ -352,46 +359,53 @@ pub async fn select_activity_post(data: web::Data<Arc<SharedData>>, req: HttpReq
         if let Ok(user_id) = user::UserKey::from_str(&(path.0).1) {
             let section_index: usize = (path.0).2;
             if section_index < 6 {
-                let section = &data.sections[section_index];
+                
                 match data.authenticate_context_from_request(&req, true) {
                     Ok(Some(ctx)) => {
                         match data.user_db.fetch(&user_id) {
                             Ok(Some(mut user)) => {
-                                if user.user_agent.is_client() {
-                                    if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
-                                        match data.org_db.fetch(&org_id) {
-                                            Ok(Some(_)) => {
-                                                if form.index < section.activities.len() {
-    
-                                                    let section_instance = section::Section::new(section_index, form.index, user_id);
-                                                    
-                                                    match data.add_section(&section_instance) {
-                                                        Ok(section_id) => {
-                                                            if let user::UserAgent::Client { sections, .. } = &mut user.user_agent {
-                                                                sections[section_index] = Some(section_id);
-                                                                let _ = data.user_db.insert(&user_id, &user);
+                                if let user::UserAgent::Client { award_index, .. } = &user.user_agent {
+                                    if let Some(award) = data.awards.get(*award_index) {
+                                        let section = &award.sections[section_index];
+                                        if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
+                                            match data.org_db.fetch(&org_id) {
+                                                Ok(Some(_)) => {
+                                                    if form.index < section.activities.len() {
+        
+                                                        let section_instance = section::Section::new(section_index, *award_index, form.index, user_id);
+                                                        
+                                                        match data.add_section(&section_instance) {
+                                                            Ok(section_id) => {
+                                                                if let user::UserAgent::Client { sections, .. } = &mut user.user_agent {
+                                                                    sections[section_index] = Some(section_id);
+                                                                    let _ = data.user_db.insert(&user_id, &user);
 
-                                                                let mut r = HttpResponse::SeeOther();
-                                                                r.header(http::header::LOCATION, dir::client_path(org_id, user_id) + dir::SECTION_ROOT + "/" + &section_index.to_string());
-                                                                r.body("")
-                                                            } else {
-                                                                panic!("Unreachable code!!!");
-                                                            }
-                                                        },
-                                                        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                            .set_body(Body::from(format!("Error: {}", e))),
-                                                    }
-                                                } else {
-                                                    HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                                                        .set_body(Body::from("Invalid activity index!"))
-                                                }       
-                                            },
-                                            _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                .set_body(Body::from("Failed to fetch org!")),
+                                                                    let mut r = HttpResponse::SeeOther();
+                                                                    r.header(http::header::LOCATION, dir::client_path(org_id, user_id) + dir::SECTION_ROOT + "/" + &section_index.to_string());
+                                                                    r.body("")
+                                                                } else {
+                                                                    panic!("Unreachable code!!!");
+                                                                }
+                                                            },
+                                                            Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                                .set_body(Body::from(format!("Error: {}", e))),
+                                                        }
+                                                    } else {
+                                                        HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                                                            .set_body(Body::from("Invalid activity index!"))
+                                                    }       
+                                                },
+                                                _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                    .set_body(Body::from("Failed to fetch org!")),
+                                            }
+                                        } else {
+                                            page::not_authorized_page(Some(ctx), &data)
                                         }
                                     } else {
-                                        page::not_authorized_page(Some(ctx), &data)
+                                        HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                            .set_body(Body::from("Award index out of range!"))
                                     }
+                                    
                                 } else {
                                     HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                                                 .set_body(Body::from("User is not a client!"))
@@ -831,7 +845,7 @@ pub async fn section_id_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                     Ok(Some(ref section_instance)) => {
                         let user_id = section_instance.user_id;
                         let section_index = section_instance.section_index;
-                        let section = &data.sections[section_index];
+                        
                         match data.user_db.fetch(&user_id) {
                             Ok(Some(user)) => {
                                 if user.user_agent.is_client() {
@@ -839,20 +853,27 @@ pub async fn section_id_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                         let org_id = user.user_agent.org_id().expect("User should have org_id!");
                                         match data.org_db.fetch(&org_id) {
                                             Ok(Some(org)) => {
-                                                if let user::UserAgent::Client { sections, .. } = &user.user_agent {
-                                                    match sections[section_index] {
-                                                        Some(section_id) => {
-                                                            match data.section_db.fetch(&section_id) {
-                                                                Ok(Some(ref section_instance)) => section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance).await,
-                                                                Ok(None) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                                    .set_body(Body::from("Section doesnt exist!")),
-                                                                Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                                    .set_body(Body::from(format!("Error: {}", e))),
-                                                            }
+                                                if let user::UserAgent::Client { sections, award_index, .. } = &user.user_agent {
+                                                    if let Some(award) = data.awards.get(*award_index) {
+                                                        let section = &award.sections[section_index];
+                                                        match sections[section_index] {
+                                                            Some(section_id) => {
+                                                                match data.section_db.fetch(&section_id) {
+                                                                    Ok(Some(ref section_instance)) => section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance).await,
+                                                                    Ok(None) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                                        .set_body(Body::from("Section doesnt exist!")),
+                                                                    Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                                        .set_body(Body::from(format!("Error: {}", e))),
+                                                                }
 
-                                                        },
-                                                        None => choose_activities_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section)
+                                                            },
+                                                            None => choose_activities_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section)
+                                                        }
+                                                    } else {
+                                                        HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                            .set_body(Body::from("Award index out of range!"))
                                                     }
+                                                    
                                                 } else {
                                                     panic!("Urneachable code!!!");
                                                 }

@@ -61,7 +61,7 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                     };
 
                     rows += &data.handlebars.render("org/org_row", &json!({
-                        "org_url": dir::org_path(org_id),
+                        "org_url": dir::org_path(*org_id),
                         "org_id": org_id,
                         "admin_email": admin,
                         "admin_url": admin_url,

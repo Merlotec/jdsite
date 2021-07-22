@@ -202,6 +202,7 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
                                     email: form.email.clone(),
                                     forename: form.forename.clone(),
                                     surname: form.surname.clone(),
+                                    notifications: true,
                                     user_agent: user::UserAgent::Associate(org_id),
                                 };
 

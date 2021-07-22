@@ -38,45 +38,49 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                             for user_id in org.clients.iter() {
                                 match data.user_db.fetch(user_id) {
                                     Ok(Some(user)) => {
-                                        if let user::UserAgent::Client { org_id: client_org_id, class, sections } = &user.user_agent {
+                                        if let user::UserAgent::Client { org_id: client_org_id, class, award_index, sections } = &user.user_agent {
                                             if client_org_id == &org_id {
+                                                if let Some(award) = data.awards.get(*award_index) {
+                                                     // Get section info
+                                                    let mut unreviewed: u32 = 0;
+                                                    //let mut completed: u32 = 0;
 
-                                                // Get section info
-                                                let mut unreviewed: u32 = 0;
-                                                //let mut completed: u32 = 0;
-
-                                                let section_styles: Vec<String> = sections.iter().map(|x| {
-                                                    if let Some(section_id) = x {
-                                                        if let Ok(Some(section)) = data.section_db.fetch(&section_id) {
-                                                            if let section::SectionState::InReview(_) = section.state {
-                                                                unreviewed += 1;
-                                                            }
-                                                            let border: &str = {
-                                                                if section.outstanding {
-                                                                    "border: 1px solid pink;"
-                                                                } else {
-                                                                    "border: none;"
+                                                    let section_styles: Vec<String> = sections.iter().map(|x| {
+                                                        if let Some(section_id) = x {
+                                                            if let Ok(Some(section)) = data.section_db.fetch(&section_id) {
+                                                                if let section::SectionState::InReview(_) = section.state {
+                                                                    unreviewed += 1;
                                                                 }
-                                                            };
-                                                            "background-color: ".to_owned() + &section.state.css_color() + "; " + border
+                                                                let border: &str = {
+                                                                    if section.outstanding {
+                                                                        "border: 1px solid pink;"
+                                                                    } else {
+                                                                        "border: none;"
+                                                                    }
+                                                                };
+                                                                "background-color: ".to_owned() + &section.state.css_color() + "; " + border
+                                                            } else {
+                                                                "".to_owned()
+                                                            }
                                                         } else {
                                                             "".to_owned()
                                                         }
-                                                    } else {
-                                                        "".to_owned()
-                                                    }
-                                                }).collect();
+                                                    }).collect();
 
-                                                rows += &data.handlebars.render("client/client_row", &json!({
-                                                    "client_url": dir::client_path(org_id, *user_id),
-                                                    "user_url": dir::user_path(*user_id),
-                                                    "user_id": user_id,
-                                                    "name": user.name(),
-                                                    "class": class,
-                                                    "email": user.email,
-                                                    "section_styles": section_styles,
-                                                    "unreviewed_sections": unreviewed.to_string(),
-                                                })).unwrap();
+                                                    rows += &data.handlebars.render("client/client_row", &json!({
+                                                        "client_url": dir::client_path(org_id, *user_id),
+                                                        "user_url": dir::user_path(*user_id),
+                                                        "user_id": user_id,
+                                                        "name": user.name(),
+                                                        "class": class,
+                                                        "email": user.email,
+                                                        "award": &award.short_name,
+                                                        "section_styles": section_styles,
+                                                        "unreviewed_sections": unreviewed.to_string(),
+                                                    })).unwrap();
+                                                } else {
+                                                    println!("[clients_get] Error - no award for index: {}", award_index);
+                                                }
                                             }
                                         }
                                     },
@@ -148,9 +152,12 @@ pub fn add_client_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_p
                 if ctx.user.user_agent.can_view_org(&org_id) {
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
-    
+                            
+                            let awards: Vec<String> = data.awards.iter().map(|x| x.name.clone()).collect();
+
                             let content = data.handlebars.render("client/add_client", &json!({
                                 "back_url": dir::org_path(org_id) + dir::CLIENTS_PAGE,
+                                "awards": awards,
                                 "add_client_url": dir::org_path(org_id) + dir::ADD_CLIENT_PATH,
                                 "err_msg": err_msg,
                             })).unwrap();
@@ -207,6 +214,7 @@ pub struct AddClientForm {
     surname: String,
     email: String,
     class: String,
+    award_index: usize,
 }
 
 #[post("/org/{org}/add_client")]
@@ -227,9 +235,11 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                                         email: form.email.clone(),
                                         forename: form.forename.clone(),
                                         surname: form.surname.clone(),
+                                        notifications: true,
                                         user_agent: user::UserAgent::Client {
                                             org_id,
                                             class: form.class.clone(),
+                                            award_index: form.award_index,
                                             sections: [None; 6],
                                         }
                                     };
@@ -334,88 +344,94 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                 Ok(Some(ctx)) => {
                     match data.user_db.fetch(&user_id) {
                         Ok(Some(user)) => {
-                            if let user::UserAgent::Client { sections, .. } = &user.user_agent {
+                            if let user::UserAgent::Client { award_index, sections, .. } = &user.user_agent {
                                 if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
                                     match data.org_db.fetch(&org_id) {
                                         Ok(Some(org)) => {
+                                            if let Some(award) = data.awards.get(*award_index) {
+                                                let mut sections_body: String = String::new();
     
-                                            let mut sections_body: String = String::new();
-    
-                                            for (i, section) in data.sections.iter().enumerate() {
-                                                let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
-                                                    if let Some(section_id) = sections[i] {
-                                                        if let Ok(Some(section_instance)) = data.section_db.fetch(&section_id) {
-                                                            let outstanding: &str = {
-                                                                if section_instance.outstanding {
-                                                                    " - <span style=\"color: pink;\">Outstanding</span>"
-                                                                } else {
-                                                                    ""
-                                                                }
-                                                            };
+                                                for (i, section) in award.sections.iter().enumerate() {
+                                                    let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
+                                                        if let Some(section_id) = sections[i] {
+                                                            if let Ok(Some(section_instance)) = data.section_db.fetch(&section_id) {
+                                                                let outstanding: &str = {
+                                                                    if section_instance.outstanding {
+                                                                        " - <span style=\"color: pink;\">Outstanding</span>"
+                                                                    } else {
+                                                                        ""
+                                                                    }
+                                                                };
 
-                                                            (
-                                                               section.activities[section_instance.activity_index].name.clone(), 
-                                                                "activity-chosen".to_owned(),
-                                                                section_instance.state.to_string() + outstanding,
-                                                                section_instance.state.css_class(),
-                                                            )
+                                                                (
+                                                                section.activities[section_instance.activity_index].name.clone(), 
+                                                                    "activity-chosen".to_owned(),
+                                                                    section_instance.state.to_string() + outstanding,
+                                                                    section_instance.state.css_class(),
+                                                                )
+                                                            } else {
+                                                                (
+                                                                    "ERROR".to_owned(), 
+                                                                    "activity-not-chosen".to_owned(),
+                                                                    String::new(),
+                                                                    "".to_owned(),
+                                                                )
+                                                            }
                                                         } else {
                                                             (
-                                                                "ERROR".to_owned(), 
-                                                                 "activity-not-chosen".to_owned(),
-                                                                 String::new(),
-                                                                 "".to_owned(),
-                                                             )
+                                                                "Click to Select Challenge".to_owned(), 
+                                                                "activity-not-chosen".to_owned(),
+                                                                "Not Started".to_owned(),
+                                                                String::new(),
+                                                            )
                                                         }
+                                                    };
+
+                                                    sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
+                                                        "section_url": dir::client_path(org_id, user_id) + dir::SECTION_ROOT + "/" + &i.to_string(),
+                                                        "section_image_url": &section.image_url,
+                                                        "section_title": &section.name,
+                                                        "activity_title": &activity_title,
+                                                        "activity_title_class": &activity_title_class,
+                                                        "state": &state,
+                                                        "state_class": &state_class,
+                                                    })).unwrap();
+                                                }
+        
+                                                let body: String = data.handlebars.render("client/client_dashboard", &json!({
+                                                    "award": &award.name,
+                                                    "sections": sections_body,
+                                                })).unwrap();
+        
+                                                let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
+                                                    (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
+                                                    (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
+                                                    (dir::client_path(org_id, user_id), user.name(), Privilege::ClientLevel)
+                                                ]);
+
+                                                let header_properties: String = {
+                                                    if ctx.user.user_agent.privilege() == Privilege::ClientLevel {
+                                                        "hidden=\"true\"".to_owned()
                                                     } else {
-                                                        (
-                                                            "Click to Select Challenge".to_owned(), 
-                                                            "activity-not-chosen".to_owned(),
-                                                            "Not Started".to_owned(),
-                                                            String::new(),
-                                                        )
+                                                        String::new()
                                                     }
                                                 };
-
-                                                sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
-                                                    "section_url": dir::client_path(org_id, user_id) + dir::SECTION_ROOT + "/" + &i.to_string(),
-                                                    "section_image_url": &section.image_url,
-                                                    "section_title": &section.name,
-                                                    "activity_title": &activity_title,
-                                                    "activity_title_class": &activity_title_class,
-                                                    "state": &state,
-                                                    "state_class": &state_class,
+        
+                                                let root: String = data.handlebars.render("client/client_root", &json!({
+                                                    "header": header,
+                                                    "body": body,
+                                                    "header_properties": header_properties,
                                                 })).unwrap();
+        
+                                                let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
+                                
+                                                HttpResponse::new(http::StatusCode::OK)
+                                                    .set_body(Body::from(body))
+                                            } else {
+                                                HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                                    .set_body(Body::from("Award index out of range!"))
                                             }
-    
-                                            let body: String = data.handlebars.render("client/client_dashboard", &json!({
-                                                "sections": sections_body,
-                                            })).unwrap();
-    
-                                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
-                                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
-                                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
-                                                (dir::client_path(org_id, user_id), user.name(), Privilege::ClientLevel)
-                                            ]);
-
-                                            let header_properties: String = {
-                                                if ctx.user.user_agent.privilege() == Privilege::ClientLevel {
-                                                    "hidden=\"true\"".to_owned()
-                                                } else {
-                                                    String::new()
-                                                }
-                                            };
-    
-                                            let root: String = data.handlebars.render("client/client_root", &json!({
-                                                "header": header,
-                                                "body": body,
-                                                "header_properties": header_properties,
-                                            })).unwrap();
-    
-                                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
-                            
-                                            HttpResponse::new(http::StatusCode::OK)
-                                                .set_body(Body::from(body))
+                                            
                                         },
                                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                                             .set_body(Body::from("Failed to fetch org!")),

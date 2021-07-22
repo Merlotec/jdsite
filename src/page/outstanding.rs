@@ -27,24 +27,26 @@ pub async fn outstanding_get(data: web::Data<Arc<SharedData>>, req: HttpRequest)
                 data.outstanding_sections_db.for_each(|section_id, _| {
                     if let Ok(Some(section)) = data.section_db.fetch(&section_id) {
                         if let Ok(Some(user)) = data.user_db.fetch(&section.user_id) {
-
-                            let client_url: String = {
-                                if let Some(org_id) = user.user_agent.org_id() {
-                                    dir::client_path(org_id, section.user_id)
-                                } else {
-                                    String::new()
-                                }
-                            };
-
-                            rows += &data.handlebars.render("sections/outstanding_section_row", &json!({
-                                "client_url": client_url,
-                                "user_url": dir::user_path(section.user_id),
-                                "section_url": "/section/".to_owned() + &section_id.to_string(),
-                                "name": user.name(),
-                                "email": user.email,
-                                "section": &data.sections[section.section_index].name,
-                                "activity": &data.sections[section.section_index].activities[section.activity_index].name,
-                            })).unwrap();
+                            if let Some(award) = data.awards.get(section.award_index) {
+                                let client_url: String = {
+                                    if let Some(org_id) = user.user_agent.org_id() {
+                                        dir::client_path(org_id, section.user_id)
+                                    } else {
+                                        String::new()
+                                    }
+                                };
+    
+                                rows += &data.handlebars.render("sections/outstanding_section_row", &json!({
+                                    "client_url": client_url,
+                                    "user_url": dir::user_path(section.user_id),
+                                    "section_url": "/section/".to_owned() + &section_id.to_string(),
+                                    "name": user.name(),
+                                    "email": user.email,
+                                    "award": &award.name,
+                                    "section": &award.sections[section.section_index].name,
+                                    "activity": &award.sections[section.section_index].activities[section.activity_index].name,
+                                })).unwrap();
+                            }
                         }
                     }
                 });

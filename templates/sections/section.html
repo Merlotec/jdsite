@@ -1,4 +1,14 @@
 <script>
+
+    function notifyEdit() {
+        
+        try {
+            onEdit();
+        } catch(e) {
+
+        }
+    }
+
     function showModal(id) {
         var modal = document.getElementById(id);
         modal.style.display = "block";
@@ -75,14 +85,14 @@
         {{{info_bubble}}}
     <br>
     
-    <form id="uploadSectionForm" style="text-align: left; width: 100%; margin: auto; float: center;" method="POST" enctype="multipart/form-data" action="{{upload_section_url}}">
+    <form onchange="notifyEdit()" id="uploadSectionForm" style="text-align: left; width: 100%; margin: auto; float: center;" method="POST" enctype="multipart/form-data" action="{{upload_section_url}}">
         <h3>Plan</h3>
         <p>
             Before you begin, explain in detail: how you plan to achieve this task, how
             much of this you have done before, what worries you most about this challenge and what
             excites you about this challenge and any other relevant information
         </p>
-        <textarea id="planText" name="plan" class="input-area" rows="15" placeholder="Pre-Challenge Plan..." {{{textarea_properties}}}>{{plan}}</textarea>
+        <textarea onkeyup="notifyEdit()" id="planText" name="plan" class="input-area" rows="15" placeholder="Pre-Challenge Plan..." {{{textarea_properties}}}>{{plan}}</textarea>
         <br>
         <h3>Reflection</h3>
         <p>
@@ -91,7 +101,7 @@
             justified, how you think having completed this challenge could be of use to you in the future
             etc
         </p>
-        <textarea id="reflectionText" name="reflection" class="input-area" rows="15" placeholder="Post-Challenge Reflection..." {{{textarea_properties}}}>{{reflection}}</textarea>
+        <textarea onkeyup="notifyEdit()" id="reflectionText" name="reflection" class="input-area" rows="15" placeholder="Post-Challenge Reflection..." {{{textarea_properties}}}>{{reflection}}</textarea>
         <br>
         <h3>Files</h3>
         {{{files_info}}}

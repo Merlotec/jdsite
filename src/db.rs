@@ -108,9 +108,13 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
     }
 
     pub fn fetch(&self, key: &K) -> Result<Option<V>, Error> {
+        self.fetch_into::<V>(key)
+    }
+
+    fn fetch_into<O: DeserializeOwned>(&self, key: &K) -> Result<Option<O>, Error> {
         match self.db.get(key) {
             Ok(Some(bytes)) => {
-                match bincode::deserialize(&bytes) {
+                match bincode::deserialize::<'_, O>(&bytes) {
                     Ok(v) => Ok(Some(v)),
                     Err(e) => Err(Error::DeserializeError(e)),
                 }
@@ -160,14 +164,14 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
     }
 
     /// Only executes if both key and value can be properly deserialised.
-    pub fn for_each<F>(&self, mut f: F)
-    where K: TryFrom<sled::IVec> + Sized, F: FnMut(K, V) {
+    pub fn for_each<F, OwnedKey>(&self, mut f: F)
+    where K: ToOwned<Owned=OwnedKey>, OwnedKey: TryFrom<sled::IVec> + Sized, F: FnMut(&OwnedKey, V) {
         for item in self.db.iter() {
             if let Ok((key, bytes)) = item {
                 match bincode::deserialize(&bytes) {
                     Ok(v) => {
-                        match K::try_from(key) {
-                            Ok(k) => f(k, v),
+                        match OwnedKey::try_from(key) {
+                            Ok(k) => f(&k, v),
                             Err(_) => {},
                         }
                     },
@@ -197,6 +201,26 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
 
         for to_delete in deletion_list.iter() {
             let _ = self.db.remove(to_delete);
+        }
+    }
+
+    pub fn migrate<F, OwnedKey, O: DeserializeOwned>(&self, f: F) 
+    where K: ToOwned<Owned=OwnedKey>, OwnedKey: AsRef<K> + TryFrom<sled::IVec> + Sized, F: Fn(&OwnedKey, O) -> V {
+        for item in self.db.iter() {
+            if let Ok((key, bytes)) = item {
+                match bincode::deserialize::<'_, O>(&bytes) {
+                    Ok(v) => {
+                        match OwnedKey::try_from(key) {
+                            Ok(k) => {
+                                let new_val = f(&k, v);
+                                let _ = self.insert(k.as_ref(), &new_val);
+                            },
+                            Err(_) => {},
+                        }
+                    },
+                    Err(_) => {},
+                }
+            }
         }
     }
 }
