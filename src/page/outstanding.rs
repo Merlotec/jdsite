@@ -1,22 +1,15 @@
 use std::sync::Arc;
 
-use actix_web::{
-    web,
-    http,
-    body::Body,
-    HttpRequest,
-    HttpResponse,
-};
+use actix_web::{body::Body, http, web, HttpRequest, HttpResponse};
 
 use serde_json::json;
 
 use crate::data::SharedData;
 
-use crate::page;
 use crate::dir;
+use crate::page;
 
 use actix_web::get;
-
 
 #[get("/outstanding")]
 pub async fn outstanding_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
@@ -51,23 +44,33 @@ pub async fn outstanding_get(data: web::Data<Arc<SharedData>>, req: HttpRequest)
                     }
                 });
 
-                let content = data.handlebars.render("sections/outstanding_list", &json!({
-                    "section_rows": rows,
-                })).unwrap();
+                let content = data
+                    .handlebars
+                    .render(
+                        "sections/outstanding_list",
+                        &json!({
+                            "section_rows": rows,
+                        }),
+                    )
+                    .unwrap();
 
-                let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | Outstanding Sections", dir::APP_NAME.to_owned(), content).unwrap();
+                let body = page::render_page(
+                    Some(ctx),
+                    &data,
+                    dir::APP_NAME.to_owned() + " | Outstanding Sections",
+                    dir::APP_NAME.to_owned(),
+                    content,
+                )
+                .unwrap();
 
-                HttpResponse::new(http::StatusCode::OK)
-                    .set_body(Body::from(body))  
+                HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
             } else {
                 page::not_authorized_page(Some(ctx), &data)
-            }         
-        },
+            }
+        }
         Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
             .set_body(Body::from(format!("Error: {}", e))),
-            
-    } 
-
+    }
 }

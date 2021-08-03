@@ -25,3 +25,4 @@ chrono = "0.4.19"
 lettre = "0.9.6"
 lettre_email = "0.9.4"
 openssl = { version = "0.10", features = ["v110"] }
+async-std = "1.9.0"

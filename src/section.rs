@@ -1,8 +1,6 @@
-
 use crate::{db, define_uuid_key, user};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
-
 
 pub struct SectionInfo {
     pub name: String,
@@ -100,7 +98,12 @@ pub struct Section {
 }
 
 impl Section {
-    pub fn new(section_index: usize, award_index: usize, activity_index: usize, user_id: user::UserKey) -> Self {
+    pub fn new(
+        section_index: usize,
+        award_index: usize,
+        activity_index: usize,
+        user_id: user::UserKey,
+    ) -> Self {
         Self {
             section_index,
             activity_index,
@@ -206,7 +209,6 @@ impl SectionInfo {
                         subtitle: "Empathy, Adaptability & Mentoring".to_owned(),
                         activity_url: "sections/silver/home/tech".to_owned(),
                     },
-
                     Activity {
                         name: "Clean the Bathroom".to_owned(),
                         subtitle: "Perseverance".to_owned(),
@@ -218,13 +220,11 @@ impl SectionInfo {
                 name: "First Aid".to_owned(),
                 subtitle: "This is a compulsory challenge with no choices".to_owned(),
                 image_url: "/section_icons/first_aid.png".to_owned(),
-                activities: vec![
-                    Activity {
-                        name: "First Aid".to_owned(),
-                        subtitle: "Critical thinking".to_owned(),
-                        activity_url: "sections/silver/first_aid/first_aid".to_owned(),
-                    },
-                ],
+                activities: vec![Activity {
+                    name: "First Aid".to_owned(),
+                    subtitle: "Critical thinking".to_owned(),
+                    activity_url: "sections/silver/first_aid/first_aid".to_owned(),
+                }],
             },
             SectionInfo {
                 name: "Physical Challenge".to_owned(),
@@ -319,7 +319,9 @@ impl SectionInfo {
                 activities: vec![
                     Activity {
                         name: "Saving".to_owned(),
-                        subtitle: "Communication, Cooperation, coping with monotony, time management".to_owned(),
+                        subtitle:
+                            "Communication, Cooperation, coping with monotony, time management"
+                                .to_owned(),
                         activity_url: "sections/gold/money/saving".to_owned(),
                     },
                     Activity {
@@ -359,20 +361,17 @@ impl SectionInfo {
                         subtitle: "Health and Safety, Awareness of Peer Pressure".to_owned(),
                         activity_url: "sections/gold/home/drink".to_owned(),
                     },
-                    
                 ],
             },
             SectionInfo {
                 name: "First Aid".to_owned(),
                 subtitle: "This is a compulsory challenge with no choices".to_owned(),
                 image_url: "/section_icons/first_aid.png".to_owned(),
-                activities: vec![
-                    Activity {
-                        name: "First Aid".to_owned(),
-                        subtitle: "Critical thinking".to_owned(),
-                        activity_url: "sections/silver/first_aid/first_aid".to_owned(),
-                    },
-                ],
+                activities: vec![Activity {
+                    name: "First Aid".to_owned(),
+                    subtitle: "Critical thinking".to_owned(),
+                    activity_url: "sections/silver/first_aid/first_aid".to_owned(),
+                }],
             },
             SectionInfo {
                 name: "Physical Challenge".to_owned(),

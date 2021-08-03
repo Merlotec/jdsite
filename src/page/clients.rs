@@ -1,32 +1,30 @@
-use std::sync::Arc;
+use actix_web::{body::Body, http, web, HttpRequest, HttpResponse};
 use std::str::FromStr;
-use actix_web::{
-    web,
-    http,
-    body::Body,
-    HttpRequest,
-    HttpResponse,
-};
+use std::sync::Arc;
 
 use serde_json::json;
 
 use crate::data::SharedData;
 
-use crate::page;
 use crate::dir;
+use crate::link;
+use crate::login;
 use crate::org;
+use crate::page;
+use crate::section;
 use crate::user;
 use crate::util;
-use crate::login;
-use crate::section;
-use crate::link;
 
 use user::Privilege;
 
 use actix_web::{get, post};
 
 #[get("/org/{org}/clients")]
-pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_path_str: web::Path<String>) -> HttpResponse {
+pub async fn clients_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    org_path_str: web::Path<String>,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
@@ -38,10 +36,16 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                             for user_id in org.clients.iter() {
                                 match data.user_db.fetch(user_id) {
                                     Ok(Some(user)) => {
-                                        if let user::UserAgent::Client { org_id: client_org_id, class, award_index, sections } = &user.user_agent {
+                                        if let user::UserAgent::Client {
+                                            org_id: client_org_id,
+                                            class,
+                                            award_index,
+                                            sections,
+                                        } = &user.user_agent
+                                        {
                                             if client_org_id == &org_id {
                                                 if let Some(award) = data.awards.get(*award_index) {
-                                                     // Get section info
+                                                    // Get section info
                                                     let mut unreviewed: u32 = 0;
                                                     //let mut completed: u32 = 0;
 
@@ -83,8 +87,8 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                                                 }
                                             }
                                         }
-                                    },
-                                    _ => {},
+                                    }
+                                    _ => {}
                                 }
                             }
 
@@ -98,62 +102,94 @@ pub async fn clients_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org
                                 }
                             };
 
-                            let content = data.handlebars.render("client/client_list", &json!({
-                                "credits": org.credits,
-                                "add_client_button": add_client_button,
-                                "client_rows": rows,
-                                "delete_user_url": dir::DELETE_USER_PATH.to_owned(),
-                            })).unwrap();
+                            let content = data
+                                .handlebars
+                                .render(
+                                    "client/client_list",
+                                    &json!({
+                                        "credits": org.credits,
+                                        "add_client_button": add_client_button,
+                                        "client_rows": rows,
+                                        "delete_user_url": dir::DELETE_USER_PATH.to_owned(),
+                                    }),
+                                )
+                                .unwrap();
 
-                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
-                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
-                            ]);
+                            let header: String = page::path_header(
+                                &data,
+                                &ctx.user.user_agent.privilege(),
+                                &[
+                                    (
+                                        dir::ORGS_PAGE.to_owned(),
+                                        dir::ORGS_TITLE.to_owned(),
+                                        Privilege::RootLevel,
+                                    ),
+                                    (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
+                                ],
+                            );
 
-                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+                            let nav = page::org_nav(
+                                &ctx,
+                                &data,
+                                org_id,
+                                &org,
+                                dir::org_path(org_id) + dir::CLIENTS_PAGE,
+                            );
 
-                            let org_page = data.handlebars.render("org/org_root", &json!({
-                                "header": header,
-                                "org_nav": nav,
-                                "body": content,
-                            })).unwrap();
+                            let org_page = data
+                                .handlebars
+                                .render(
+                                    "org/org_root",
+                                    &json!({
+                                        "header": header,
+                                        "org_nav": nav,
+                                        "body": content,
+                                    }),
+                                )
+                                .unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name + " - Pupils", dir::APP_NAME.to_owned(), org_page).unwrap();
+                            let body = page::render_page(
+                                Some(ctx),
+                                &data,
+                                dir::APP_NAME.to_owned() + " | " + &org.name + " - Pupils",
+                                dir::APP_NAME.to_owned(),
+                                org_page,
+                            )
+                            .unwrap();
 
-                            HttpResponse::new(http::StatusCode::OK)
-                                .set_body(Body::from(body))
-                                
-                        },
+                            HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+                        }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                        .set_body(Body::from("Failed to fetch org!")),
+                            .set_body(Body::from("Failed to fetch org!")),
                     }
-                    
-                    
                 } else {
                     page::not_authorized_page(Some(ctx), &data)
                 }
-            },
+            }
             Ok(None) => page::redirect_to_login(&req),
 
             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                 .set_body(Body::from(format!("Error: {}", e))),
-                
-        } 
+        }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }
 
-pub fn add_client_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_path_str: web::Path<String>, err_msg: &str) -> HttpResponse {
+pub fn add_client_page(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    org_path_str: web::Path<String>,
+    err_msg: &str,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
                 if ctx.user.user_agent.can_view_org(&org_id) {
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
-                            
-                            let awards: Vec<String> = data.awards.iter().map(|x| x.name.clone()).collect();
+                            let awards: Vec<String> =
+                                data.awards.iter().map(|x| x.name.clone()).collect();
 
                             let content = data.handlebars.render("client/add_client", &json!({
                                 "back_url": dir::org_path(org_id) + dir::CLIENTS_PAGE,
@@ -162,50 +198,74 @@ pub fn add_client_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_p
                                 "err_msg": err_msg,
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
-                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
-                            ]);
+                            let header: String = page::path_header(
+                                &data,
+                                &ctx.user.user_agent.privilege(),
+                                &[
+                                    (
+                                        dir::ORGS_PAGE.to_owned(),
+                                        dir::ORGS_TITLE.to_owned(),
+                                        Privilege::RootLevel,
+                                    ),
+                                    (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
+                                ],
+                            );
 
-                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+                            let nav = page::org_nav(
+                                &ctx,
+                                &data,
+                                org_id,
+                                &org,
+                                dir::org_path(org_id) + dir::CLIENTS_PAGE,
+                            );
 
-                            let org_page = data.handlebars.render("org/org_root", &json!({
-                                "header": header,
-                                "org_nav": nav,
-                                "body": content,
-                            })).unwrap();
+                            let org_page = data
+                                .handlebars
+                                .render(
+                                    "org/org_root",
+                                    &json!({
+                                        "header": header,
+                                        "org_nav": nav,
+                                        "body": content,
+                                    }),
+                                )
+                                .unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name, dir::APP_NAME.to_owned(), org_page).unwrap();
+                            let body = page::render_page(
+                                Some(ctx),
+                                &data,
+                                dir::APP_NAME.to_owned() + " | " + &org.name,
+                                dir::APP_NAME.to_owned(),
+                                org_page,
+                            )
+                            .unwrap();
 
-                            HttpResponse::new(http::StatusCode::OK)
-                                .set_body(Body::from(body))
-                                
-                        },
+                            HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+                        }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                        .set_body(Body::from("Failed to fetch org!")),
+                            .set_body(Body::from("Failed to fetch org!")),
                     }
-                    
-                    
                 } else {
                     page::not_authorized_page(Some(ctx), &data)
                 }
-            },
+            }
             Ok(None) => page::redirect_to_login(&req),
 
             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                 .set_body(Body::from(format!("Error: {}", e))),
-                
-        } 
+        }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }
 
-
 #[get("/org/{org}/add_client")]
-pub async fn add_client_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org: web::Path<String>) -> HttpResponse {
-   add_client_page(data, req, org, "")
+pub async fn add_client_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    org: web::Path<String>,
+) -> HttpResponse {
+    add_client_page(data, req, org, "")
 }
 
 #[derive(serde::Deserialize)]
@@ -218,7 +278,12 @@ pub struct AddClientForm {
 }
 
 #[post("/org/{org}/add_client")]
-pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AddClientForm>, org_path_str: web::Path<String>) -> HttpResponse {
+pub async fn add_client_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<AddClientForm>,
+    org_path_str: web::Path<String>,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
@@ -226,11 +291,11 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
                             if org.credits > 0 {
-                                if util::is_string_server_valid(&form.forename) && 
-                                util::is_string_server_valid(&form.surname) &&
-                                util::is_string_server_valid(&form.email) &&
-                                util::is_string_server_valid(&form.class) {
-
+                                if util::is_string_server_valid(&form.forename)
+                                    && util::is_string_server_valid(&form.surname)
+                                    && util::is_string_server_valid(&form.email)
+                                    && util::is_string_server_valid(&form.class)
+                                {
                                     let user: user::User = user::User {
                                         email: form.email.clone(),
                                         forename: form.forename.clone(),
@@ -241,7 +306,7 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                                             class: form.class.clone(),
                                             award_index: form.award_index,
                                             sections: [None; 6],
-                                        }
+                                        },
                                     };
 
                                     let password: String = util::gen_password(8);
@@ -306,53 +371,63 @@ pub async fn add_client_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                                         },
                                         Err(login::LoginEntryError::UsernameExists) =>  add_client_page(data, req, org_path_str, "This email is associated with another account!"),
                                         Err(e) =>  add_client_page(data, req, org_path_str, &format!("Something went wrong: ensure that the email is unique: {}", e)),
-                                    }   
+                                    }
                                 } else {
-                                    add_client_page(data, req, org_path_str, "Invalid pupil details provided!")
+                                    add_client_page(
+                                        data,
+                                        req,
+                                        org_path_str,
+                                        "Invalid pupil details provided!",
+                                    )
                                 }
                             } else {
                                 add_client_page(data, req, org_path_str, "No more pupil credits remaining! Please contact support to purchase more.")
                             }
-                        },
+                        }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                        .set_body(Body::from("Failed to fetch org!")),
+                            .set_body(Body::from("Failed to fetch org!")),
                     }
-                    
-                    
                 } else {
                     page::not_authorized_page(Some(ctx), &data)
                 }
-            },
+            }
             Ok(None) => page::redirect_to_login(&req),
 
             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                 .set_body(Body::from(format!("Error: {}", e))),
-                
-        } 
+        }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }
 
-
 #[get("/org/{org}/client/{user}")]
-pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, path: web::Path<(String, String)>) -> HttpResponse {
+pub async fn client_dashboard_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    path: web::Path<(String, String)>,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&(path.0).0) {
         if let Ok(user_id) = user::UserKey::from_str(&(path.0).1) {
             match data.authenticate_context_from_request(&req, true) {
-                Ok(Some(ctx)) => {
-                    match data.user_db.fetch(&user_id) {
-                        Ok(Some(user)) => {
-                            if let user::UserAgent::Client { award_index, sections, .. } = &user.user_agent {
-                                if ctx.user.user_agent.can_view_user(&user.user_agent) || ctx.user_id == user_id {
-                                    match data.org_db.fetch(&org_id) {
-                                        Ok(Some(org)) => {
-                                            if let Some(award) = data.awards.get(*award_index) {
-                                                let mut sections_body: String = String::new();
-    
-                                                for (i, section) in award.sections.iter().enumerate() {
-                                                    let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
+                Ok(Some(ctx)) => match data.user_db.fetch(&user_id) {
+                    Ok(Some(user)) => {
+                        if let user::UserAgent::Client {
+                            award_index,
+                            sections,
+                            ..
+                        } = &user.user_agent
+                        {
+                            if ctx.user.user_agent.can_view_user(&user.user_agent)
+                                || ctx.user_id == user_id
+                            {
+                                match data.org_db.fetch(&org_id) {
+                                    Ok(Some(org)) => {
+                                        if let Some(award) = data.awards.get(*award_index) {
+                                            let mut sections_body: String = String::new();
+
+                                            for (i, section) in award.sections.iter().enumerate() {
+                                                let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
                                                         if let Some(section_id) = sections[i] {
                                                             if let Ok(Some(section_instance)) = data.section_db.fetch(&section_id) {
                                                                 let outstanding: &str = {
@@ -387,7 +462,7 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                                                         }
                                                     };
 
-                                                    sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
+                                                sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
                                                         "section_url": dir::client_path(org_id, user_id) + dir::SECTION_ROOT + "/" + &i.to_string(),
                                                         "section_image_url": &section.image_url,
                                                         "section_title": &section.name,
@@ -396,73 +471,108 @@ pub async fn client_dashboard_get(data: web::Data<Arc<SharedData>>, req: HttpReq
                                                         "state": &state,
                                                         "state_class": &state_class,
                                                     })).unwrap();
-                                                }
-        
-                                                let body: String = data.handlebars.render("client/client_dashboard", &json!({
-                                                    "award": &award.name,
-                                                    "sections": sections_body,
-                                                })).unwrap();
-        
-                                                let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
-                                                    (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
-                                                    (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
-                                                    (dir::client_path(org_id, user_id), user.name(), Privilege::ClientLevel)
-                                                ]);
-
-                                                let header_properties: String = {
-                                                    if ctx.user.user_agent.privilege() == Privilege::ClientLevel {
-                                                        "hidden=\"true\"".to_owned()
-                                                    } else {
-                                                        String::new()
-                                                    }
-                                                };
-        
-                                                let root: String = data.handlebars.render("client/client_root", &json!({
-                                                    "header": header,
-                                                    "body": body,
-                                                    "header_properties": header_properties,
-                                                })).unwrap();
-        
-                                                let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard", dir::APP_NAME.to_owned(), root).unwrap();
-                                
-                                                HttpResponse::new(http::StatusCode::OK)
-                                                    .set_body(Body::from(body))
-                                            } else {
-                                                HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                                    .set_body(Body::from("Award index out of range!"))
                                             }
-                                            
-                                        },
-                                        _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                            .set_body(Body::from("Failed to fetch org!")),
+
+                                            let body: String = data
+                                                .handlebars
+                                                .render(
+                                                    "client/client_dashboard",
+                                                    &json!({
+                                                        "award": &award.name,
+                                                        "sections": sections_body,
+                                                    }),
+                                                )
+                                                .unwrap();
+
+                                            let header: String = page::path_header(
+                                                &data,
+                                                &ctx.user.user_agent.privilege(),
+                                                &[
+                                                    (
+                                                        dir::ORGS_PAGE.to_owned(),
+                                                        dir::ORGS_TITLE.to_owned(),
+                                                        Privilege::RootLevel,
+                                                    ),
+                                                    (
+                                                        dir::org_path(org_id),
+                                                        org.name.clone(),
+                                                        Privilege::OrgLevel,
+                                                    ),
+                                                    (
+                                                        dir::client_path(org_id, user_id),
+                                                        user.name(),
+                                                        Privilege::ClientLevel,
+                                                    ),
+                                                ],
+                                            );
+
+                                            let header_properties: String = {
+                                                if ctx.user.user_agent.privilege()
+                                                    == Privilege::ClientLevel
+                                                {
+                                                    "hidden=\"true\"".to_owned()
+                                                } else {
+                                                    String::new()
+                                                }
+                                            };
+
+                                            let root: String = data
+                                                .handlebars
+                                                .render(
+                                                    "client/client_root",
+                                                    &json!({
+                                                        "header": header,
+                                                        "body": body,
+                                                        "header_properties": header_properties,
+                                                    }),
+                                                )
+                                                .unwrap();
+
+                                            let body = page::render_page(
+                                                Some(ctx),
+                                                &data,
+                                                dir::APP_NAME.to_owned()
+                                                    + " | "
+                                                    + "Pupil Dashboard",
+                                                dir::APP_NAME.to_owned(),
+                                                root,
+                                            )
+                                            .unwrap();
+
+                                            HttpResponse::new(http::StatusCode::OK)
+                                                .set_body(Body::from(body))
+                                        } else {
+                                            HttpResponse::new(
+                                                http::StatusCode::INTERNAL_SERVER_ERROR,
+                                            )
+                                            .set_body(Body::from("Award index out of range!"))
+                                        }
                                     }
-                                } else {
-                                    page::not_authorized_page(Some(ctx), &data)
+                                    _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                        .set_body(Body::from("Failed to fetch org!")),
                                 }
                             } else {
-                                HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                            .set_body(Body::from("User is not a client!"))
+                                page::not_authorized_page(Some(ctx), &data)
                             }
-                            
-                        },
-                        Ok(None) => HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                            .set_body(Body::from("Could not find user!")),
-                        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                            .set_body(Body::from(format!("Error: {}", e))),
+                        } else {
+                            HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                                .set_body(Body::from("User is not a client!"))
+                        }
                     }
+                    Ok(None) => HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                        .set_body(Body::from("Could not find user!")),
+                    Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                        .set_body(Body::from(format!("Error: {}", e))),
                 },
                 Ok(None) => page::redirect_to_login(&req),
 
                 Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                     .set_body(Body::from(format!("Error: {}", e))),
-                    
-            } 
+            }
         } else {
-            HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                .set_body(Body::from("Invalid user_id"))
+            HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid user_id"))
         }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }

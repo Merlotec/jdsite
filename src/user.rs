@@ -1,6 +1,6 @@
-use crate::{db, define_uuid_key, org::OrgKey, section::SectionKey, dir};
+use crate::{db, define_uuid_key, dir, org::OrgKey, section::SectionKey};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
@@ -8,7 +8,7 @@ pub struct User {
 
     pub forename: String,
     pub surname: String,
-    
+
     pub notifications: bool,
 
     pub user_agent: UserAgent,
@@ -173,8 +173,6 @@ impl UserAgent {
             UserAgent::Client { org_id, .. } => Some(*org_id),
         }
     }
-
-    
 }
 
 define_uuid_key!(UserKey);

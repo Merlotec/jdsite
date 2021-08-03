@@ -4,7 +4,9 @@ pub fn is_string_server_valid(s: &str) -> bool {
     if s.trim().is_empty() {
         return false;
     }
-    s.chars().all(|c| c.is_alphanumeric() || c == '@' || c == '.' || c == '-' || c == '_' || c == '!' || c == ' ')
+    s.chars().all(|c| {
+        c.is_alphanumeric() || c == '@' || c == '.' || c == '-' || c == '_' || c == '!' || c == ' '
+    })
 }
 
 pub fn gen_password(len: usize) -> String {

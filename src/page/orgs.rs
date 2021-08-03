@@ -1,24 +1,18 @@
-use std::{sync::Arc, time::Duration};
 use std::str::FromStr;
+use std::{sync::Arc, time::Duration};
 
-use actix_web::{
-    web,
-    http,
-    body::Body,
-    HttpRequest,
-    HttpResponse,
-};
+use actix_web::{body::Body, http, web, HttpRequest, HttpResponse};
 
 use serde_json::json;
 
 use crate::data::SharedData;
 
-use crate::page;
 use crate::dir;
-use crate::org;
-use crate::util;
 use crate::link;
+use crate::org;
+use crate::page;
 use crate::user;
+use crate::util;
 
 use actix_web::{get, post};
 
@@ -26,11 +20,13 @@ use actix_web::{get, post};
 pub async fn org_get(org: web::Path<String>) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org) {
         let mut r = HttpResponse::SeeOther();
-        r.header(http::header::LOCATION, dir::org_path(org_id) + dir::CLIENTS_PAGE);
+        r.header(
+            http::header::LOCATION,
+            dir::org_path(org_id) + dir::CLIENTS_PAGE,
+        );
         r.body("")
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }
 
@@ -45,7 +41,10 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                     let (admin, admin_url): (String, String) = {
                         if let Some(user_id) = org.admin {
                             if let Ok(Some(admin_user)) = data.user_db.fetch(&user_id) {
-                                (admin_user.email, dir::USER_ROOT_PATH.to_owned() + "/" + &user_id.to_string())
+                                (
+                                    admin_user.email,
+                                    dir::USER_ROOT_PATH.to_owned() + "/" + &user_id.to_string(),
+                                )
                             } else {
                                 ("Error!".to_owned(), String::new())
                             }
@@ -60,37 +59,53 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                         }
                     };
 
-                    rows += &data.handlebars.render("org/org_row", &json!({
-                        "org_url": dir::org_path(*org_id),
-                        "org_id": org_id,
-                        "admin_email": admin,
-                        "admin_url": admin_url,
-                        "name": org.name,
-                        "unreviewed_sections": org.unreviewed_sections.len(),
-                        "teachers": org.associates.len(),
-                        "pupils": org.clients.len(),
-                        "credits": org.credits,
-                    })).unwrap();
+                    rows += &data
+                        .handlebars
+                        .render(
+                            "org/org_row",
+                            &json!({
+                                "org_url": dir::org_path(*org_id),
+                                "org_id": org_id,
+                                "admin_email": admin,
+                                "admin_url": admin_url,
+                                "name": org.name,
+                                "unreviewed_sections": org.unreviewed_sections.len(),
+                                "teachers": org.associates.len(),
+                                "pupils": org.clients.len(),
+                                "credits": org.credits,
+                            }),
+                        )
+                        .unwrap();
                 });
 
-            
-                let org_page = data.handlebars.render("org/org_list", &json!({
-                    "org_rows": rows,
-                    "add_org_url": dir::ADD_ORG_PATH,
-                    "assign_admin_url": dir::ASSIGN_ADMIN_PATH,
-                    "delete_org_url": dir::DELETE_ORG_PATH,
-                    "add_credits_url": dir::ADD_CREDITS_PATH,
-                })).unwrap();
+                let org_page = data
+                    .handlebars
+                    .render(
+                        "org/org_list",
+                        &json!({
+                            "org_rows": rows,
+                            "add_org_url": dir::ADD_ORG_PATH,
+                            "assign_admin_url": dir::ASSIGN_ADMIN_PATH,
+                            "delete_org_url": dir::DELETE_ORG_PATH,
+                            "add_credits_url": dir::ADD_CREDITS_PATH,
+                        }),
+                    )
+                    .unwrap();
 
-                let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | Organisations", dir::APP_NAME.to_owned(), org_page).unwrap();
+                let body = page::render_page(
+                    Some(ctx),
+                    &data,
+                    dir::APP_NAME.to_owned() + " | Organisations",
+                    dir::APP_NAME.to_owned(),
+                    org_page,
+                )
+                .unwrap();
 
-                HttpResponse::new(http::StatusCode::OK)
-                    .set_body(Body::from(body))
-                
+                HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }
-        },
+        }
         Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
@@ -104,16 +119,19 @@ pub struct AddOrgForm {
 }
 
 #[post("/add_org")]
-pub async fn add_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AddOrgForm>) -> HttpResponse {
+pub async fn add_org_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<AddOrgForm>,
+) -> HttpResponse {
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_view_orgs() {
-                
                 let org = org::Org::new(form.name.clone());
 
                 if !util::is_string_server_valid(&org.name) {
                     return HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                    .set_body(Body::from("Dissalowed characters in org name!"));
+                        .set_body(Body::from("Dissalowed characters in org name!"));
                 }
 
                 match data.org_db.insert(&org::OrgKey::generate(), &org) {
@@ -121,15 +139,14 @@ pub async fn add_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, fo
                         let mut r = HttpResponse::SeeOther();
                         r.header(http::header::LOCATION, dir::ORGS_PAGE);
                         r.body("")
-                    },
+                    }
                     Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                         .set_body(Body::from(format!("Error: {}", e))),
                 }
-                
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }
-        },
+        }
         Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
@@ -143,7 +160,11 @@ pub struct DeleteOrgForm {
 }
 
 #[post("/del_org")]
-pub async fn delete_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<DeleteOrgForm>) -> HttpResponse {
+pub async fn delete_org_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<DeleteOrgForm>,
+) -> HttpResponse {
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_delete_orgs() {
@@ -152,21 +173,20 @@ pub async fn delete_org_post(data: web::Data<Arc<SharedData>>, req: HttpRequest,
                         let mut r = HttpResponse::SeeOther();
                         r.header(http::header::LOCATION, dir::ORGS_PAGE);
                         r.body("")
-                    },
-                    Err(e) =>  HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    }
+                    Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                         .set_body(Body::from(format!("Error: {}", e))),
-                } 
+                }
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }
-        },
+        }
         Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
             .set_body(Body::from(format!("Error: {}", e))),
     }
 }
-
 
 #[derive(serde::Deserialize)]
 pub struct AssignAdminForm {
@@ -175,27 +195,35 @@ pub struct AssignAdminForm {
 }
 
 #[post("/assign_admin")]
-pub async fn assign_admin_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AssignAdminForm>) -> HttpResponse {
+pub async fn assign_admin_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<AssignAdminForm>,
+) -> HttpResponse {
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_view_orgs() {
                 match data.link_manager.create_link(
-                    link::Link::CreateUser(user::UserAgent::Organisation(form.org_id)), 
-                    Duration::from_secs(dir::ASSIGN_ADMIN_LINK_TIMEOUT_SECS)
+                    link::Link::CreateUser(user::UserAgent::Organisation(form.org_id)),
+                    Duration::from_secs(dir::ASSIGN_ADMIN_LINK_TIMEOUT_SECS),
                 ) {
                     Ok(link_token) => {
                         // Send email
-                        let link: String = "/user/create_account/".to_string() + &link_token.to_string();
+                        let link: String =
+                            "/user/create_account/".to_string() + &link_token.to_string();
                         let addr: String = form.email.clone();
 
-                        let subtitle = "<a href=\"".to_owned() + &link + "\">" + "Click here</a> to create your organisation account.";
+                        let subtitle = "<a href=\"".to_owned()
+                            + &link
+                            + "\">"
+                            + "Click here</a> to create your organisation account.";
 
                         if let Err(e) = data.send_email(
-                            &addr, 
-                            "Senior Duke - Create Your Account", 
+                            &addr,
+                            "Senior Duke - Create Your Account",
                             "Create Organisation Account",
-                             &subtitle, 
-                             ""
+                            &subtitle,
+                            "",
                         ) {
                             println!("Failed to send email: {}", e);
                         }
@@ -203,14 +231,14 @@ pub async fn assign_admin_post(data: web::Data<Arc<SharedData>>, req: HttpReques
                         let mut r = HttpResponse::SeeOther();
                         r.header(http::header::LOCATION, dir::ORGS_PAGE);
                         r.body("")
-                    },
+                    }
                     Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                         .set_body(Body::from(format!("Error: {}", e))),
-                }        
+                }
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }
-        },
+        }
         Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
@@ -225,7 +253,11 @@ pub struct AddCreditsForm {
 }
 
 #[post("/add_credits")]
-pub async fn add_credits_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AddCreditsForm>) -> HttpResponse {
+pub async fn add_credits_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<AddCreditsForm>,
+) -> HttpResponse {
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_view_orgs() {
@@ -238,20 +270,18 @@ pub async fn add_credits_post(data: web::Data<Arc<SharedData>>, req: HttpRequest
                                 let mut r = HttpResponse::SeeOther();
                                 r.header(http::header::LOCATION, dir::ORGS_PAGE);
                                 r.body("")
-                            },
+                            }
                             _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                                 .set_body(Body::from("Could not reinsert org!")),
                         }
-                    },
+                    }
                     _ => HttpResponse::new(http::StatusCode::BAD_REQUEST)
                         .set_body(Body::from("Invalid org id!")),
                 }
-
-                
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }
-        },
+        }
         Ok(None) => page::redirect_to_login(&req),
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)

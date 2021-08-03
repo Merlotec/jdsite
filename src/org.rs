@@ -1,10 +1,12 @@
-use serde::{Serialize, Deserialize};
-use crate::user::UserKey;
 use crate::section::SectionKey;
+use crate::user::UserKey;
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use std::time::SystemTime;
 
-use crate::{db, define_uuid_key};
+use crate::{db, define_uuid_key, dir};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Org {
     pub admin: Option<UserKey>,
     pub name: String,
@@ -12,6 +14,8 @@ pub struct Org {
     pub clients: Vec<UserKey>,
     pub unreviewed_sections: Vec<SectionKey>,
     pub credits: u32,
+    pub last_notification: SystemTime,
+    pub notification_interval: Duration,
 }
 
 impl Org {
@@ -23,6 +27,10 @@ impl Org {
             clients: Vec::new(),
             unreviewed_sections: Vec::new(),
             credits: 0,
+            last_notification: SystemTime::now(),
+            notification_interval: Duration::from_secs(
+                60 * 60 * 24 * dir::NOTIFICATION_INTERVAL_DAYS,
+            ),
         }
     }
 }
@@ -30,4 +38,3 @@ impl Org {
 define_uuid_key!(OrgKey);
 
 pub type OrgDb = db::Database<OrgKey, Org>;
-

@@ -1,32 +1,29 @@
-
-use std::sync::Arc;
+use actix_web::{body::Body, http, web, HttpRequest, HttpResponse};
 use std::str::FromStr;
-use actix_web::{
-    web,
-    http,
-    body::Body,
-    HttpRequest,
-    HttpResponse,
-};
+use std::sync::Arc;
 
 use serde_json::json;
 
 use crate::data::SharedData;
 
-use crate::page;
 use crate::dir;
+use crate::link;
+use crate::login;
 use crate::org;
+use crate::page;
 use crate::user;
 use crate::util;
-use crate::login;
-use crate::link;
 
 use user::Privilege;
 
 use actix_web::{get, post};
 
 #[get("/org/{org}/associates")]
-pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_path_str: web::Path<String>) -> HttpResponse {
+pub async fn associates_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    org_path_str: web::Path<String>,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
@@ -38,16 +35,22 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                             for user_id in org.associates.iter() {
                                 match data.user_db.fetch(user_id) {
                                     Ok(Some(user)) => {
-                                        if let user::UserAgent::Associate(associate_org_id) = user.user_agent {
+                                        if let user::UserAgent::Associate(associate_org_id) =
+                                            user.user_agent
+                                        {
                                             // confirm they're of the correct org
                                             let delete_user_hidden: String = {
-                                                if !ctx.user.user_agent.can_delete_user(&user.user_agent) {
+                                                if !ctx
+                                                    .user
+                                                    .user_agent
+                                                    .can_delete_user(&user.user_agent)
+                                                {
                                                     "hidden=\"true\"".to_owned()
                                                 } else {
                                                     String::new()
                                                 }
                                             };
-                                            
+
                                             if associate_org_id == org_id {
                                                 rows += &data.handlebars.render("associate/associate_row", &json!({
                                                     "user_url": dir::user_path(*user_id),
@@ -58,8 +61,8 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                                 })).unwrap();
                                             }
                                         }
-                                    },
-                                    _ => {},
+                                    }
+                                    _ => {}
                                 }
                             }
 
@@ -78,104 +81,153 @@ pub async fn associates_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, 
                                 "associate_rows": rows,
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
-                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
-                            ]);
+                            let header: String = page::path_header(
+                                &data,
+                                &ctx.user.user_agent.privilege(),
+                                &[
+                                    (
+                                        dir::ORGS_PAGE.to_owned(),
+                                        dir::ORGS_TITLE.to_owned(),
+                                        Privilege::RootLevel,
+                                    ),
+                                    (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
+                                ],
+                            );
 
-                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
+                            let nav = page::org_nav(
+                                &ctx,
+                                &data,
+                                org_id,
+                                &org,
+                                dir::org_path(org_id) + dir::ASSOCIATES_PAGE,
+                            );
 
-                            let org_page = data.handlebars.render("org/org_root", &json!({
-                                "header": header,
-                                "org_nav": nav,
-                                "body": content,
-                            })).unwrap();
+                            let org_page = data
+                                .handlebars
+                                .render(
+                                    "org/org_root",
+                                    &json!({
+                                        "header": header,
+                                        "org_nav": nav,
+                                        "body": content,
+                                    }),
+                                )
+                                .unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name  + " - Teachers", dir::APP_NAME.to_owned(), org_page).unwrap();
+                            let body = page::render_page(
+                                Some(ctx),
+                                &data,
+                                dir::APP_NAME.to_owned() + " | " + &org.name + " - Teachers",
+                                dir::APP_NAME.to_owned(),
+                                org_page,
+                            )
+                            .unwrap();
 
-                            HttpResponse::new(http::StatusCode::OK)
-                                .set_body(Body::from(body))
-                                
-                        },
+                            HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+                        }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                        .set_body(Body::from("Failed to fetch org!")),
+                            .set_body(Body::from("Failed to fetch org!")),
                     }
-                    
-                    
                 } else {
                     page::not_authorized_page(Some(ctx), &data)
                 }
-            },
+            }
             Ok(None) => page::redirect_to_login(&req),
 
             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                 .set_body(Body::from(format!("Error: {}", e))),
-                
-        } 
+        }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }
 
-pub fn add_associate_page(data: web::Data<Arc<SharedData>>, req: HttpRequest, org_path_str: web::Path<String>, err_msg: &str) -> HttpResponse {
+pub fn add_associate_page(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    org_path_str: web::Path<String>,
+    err_msg: &str,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
                 if ctx.user.user_agent.can_add_associate(&org_id) {
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
-    
                             let content = data.handlebars.render("associate/add_associate", &json!({
                                 "back_url": dir::org_path(org_id) + dir::ASSOCIATES_PAGE,
                                 "add_associate_url": dir::org_path(org_id) + dir::ADD_ASSOCIATE_PATH,
                                 "err_msg": err_msg,
                             })).unwrap();
 
-                            let header: String = page::path_header(&data, &ctx.user.user_agent.privilege(), &[
-                                (dir::ORGS_PAGE.to_owned(), dir::ORGS_TITLE.to_owned(), Privilege::RootLevel), 
-                                (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
-                            ]);
+                            let header: String = page::path_header(
+                                &data,
+                                &ctx.user.user_agent.privilege(),
+                                &[
+                                    (
+                                        dir::ORGS_PAGE.to_owned(),
+                                        dir::ORGS_TITLE.to_owned(),
+                                        Privilege::RootLevel,
+                                    ),
+                                    (dir::org_path(org_id), org.name.clone(), Privilege::OrgLevel),
+                                ],
+                            );
 
-                            let nav = page::org_nav(&ctx, &data, org_id, &org, dir::org_path(org_id) + dir::ASSOCIATES_PAGE);
+                            let nav = page::org_nav(
+                                &ctx,
+                                &data,
+                                org_id,
+                                &org,
+                                dir::org_path(org_id) + dir::ASSOCIATES_PAGE,
+                            );
 
-                            let org_page = data.handlebars.render("org/org_root", &json!({
-                                "header": header,
-                                "org_nav": nav,
-                                "body": content,
-                            })).unwrap();
+                            let org_page = data
+                                .handlebars
+                                .render(
+                                    "org/org_root",
+                                    &json!({
+                                        "header": header,
+                                        "org_nav": nav,
+                                        "body": content,
+                                    }),
+                                )
+                                .unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + &org.name, dir::APP_NAME.to_owned(), org_page).unwrap();
+                            let body = page::render_page(
+                                Some(ctx),
+                                &data,
+                                dir::APP_NAME.to_owned() + " | " + &org.name,
+                                dir::APP_NAME.to_owned(),
+                                org_page,
+                            )
+                            .unwrap();
 
-                            HttpResponse::new(http::StatusCode::OK)
-                                .set_body(Body::from(body))
-                                
-                        },
+                            HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+                        }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                        .set_body(Body::from("Failed to fetch org!")),
+                            .set_body(Body::from("Failed to fetch org!")),
                     }
-                    
-                    
                 } else {
                     page::not_authorized_page(Some(ctx), &data)
                 }
-            },
+            }
             Ok(None) => page::redirect_to_login(&req),
 
             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                 .set_body(Body::from(format!("Error: {}", e))),
-                
-        } 
+        }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }
 
-
 #[get("/org/{org}/add_associate")]
-pub async fn add_associate_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, org: web::Path<String>) -> HttpResponse {
-   add_associate_page(data, req, org, "")
+pub async fn add_associate_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    org: web::Path<String>,
+) -> HttpResponse {
+    add_associate_page(data, req, org, "")
 }
 
 #[derive(serde::Deserialize)]
@@ -186,18 +238,22 @@ pub struct AddClientForm {
 }
 
 #[post("/org/{org}/add_associate")]
-pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpRequest, form: web::Form<AddClientForm>, org_path_str: web::Path<String>) -> HttpResponse {
+pub async fn add_associate_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<AddClientForm>,
+    org_path_str: web::Path<String>,
+) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
                 if ctx.user.user_agent.can_add_associate(&org_id) {
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
-                            
-                            if util::is_string_server_valid(&form.forename) && 
-                            util::is_string_server_valid(&form.surname) &&
-                            util::is_string_server_valid(&form.email) {
-
+                            if util::is_string_server_valid(&form.forename)
+                                && util::is_string_server_valid(&form.surname)
+                                && util::is_string_server_valid(&form.email)
+                            {
                                 let user: user::User = user::User {
                                     email: form.email.clone(),
                                     forename: form.forename.clone(),
@@ -214,7 +270,6 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
                                             // send email.
                                             let link: String = "/user/change_password/".to_string() + &link_token.to_string();
                                             let addr: String = form.email.clone();
-                    
                                             let subtitle: String = "<a href=\"".to_owned() + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
                     
                                             if let Err(e) = data.send_email(
@@ -268,29 +323,29 @@ pub async fn add_associate_post(data: web::Data<Arc<SharedData>>, req: HttpReque
                                     },
                                     Err(login::LoginEntryError::UsernameExists) =>  add_associate_page(data, req, org_path_str, "This email is associated with another account!"),
                                     Err(e) =>  add_associate_page(data, req, org_path_str, &format!("Something went wrong: ensure that the email is unique: {}", e)),
-                                }   
+                                }
                             } else {
-                                add_associate_page(data, req, org_path_str, "Invalid teacher details provided!")
+                                add_associate_page(
+                                    data,
+                                    req,
+                                    org_path_str,
+                                    "Invalid teacher details provided!",
+                                )
                             }
-                        
-                        },
+                        }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                        .set_body(Body::from("Failed to fetch org!")),
+                            .set_body(Body::from("Failed to fetch org!")),
                     }
-                    
-                    
                 } else {
                     page::not_authorized_page(Some(ctx), &data)
                 }
-            },
+            }
             Ok(None) => page::redirect_to_login(&req),
 
             Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                 .set_body(Body::from(format!("Error: {}", e))),
-                
-        } 
+        }
     } else {
-        HttpResponse::new(http::StatusCode::BAD_REQUEST)
-            .set_body(Body::from("Invalid org_id"))
+        HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("Invalid org_id"))
     }
 }

@@ -103,6 +103,16 @@ b {
     top: 0; /* Position the navbar at the top of the page */
 }
 
+.navbar-title-image {
+    margin-top: 5px;
+    margin-right: 10px;
+    margin-left: 0px;
+    padding: 0px;
+    width: auto;
+    height: 50px;
+    float: left;
+}
+
 .navbar-brand {
     font-weight: bolder;
     font-size: 22px;

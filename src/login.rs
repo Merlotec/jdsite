@@ -1,8 +1,8 @@
-use std::path::Path;
 use crate::{db, db::Database, user::UserKey};
 use std::fmt;
+use std::path::Path;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct LoginEntry {
@@ -39,8 +39,13 @@ pub enum LoginEntryError {
 impl fmt::Display for LoginEntryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LoginEntryError::UsernameExists => write!(f, "An account with the given username already exists!"),
-            LoginEntryError::NotUnique => write!(f, "An account with similar characteristics exists where it should not!"),
+            LoginEntryError::UsernameExists => {
+                write!(f, "An account with the given username already exists!")
+            }
+            LoginEntryError::NotUnique => write!(
+                f,
+                "An account with similar characteristics exists where it should not!"
+            ),
             //LoginEntryError::PasswordInvalid(ref s) => write!(f, "Password invalid: {}!", s),
             LoginEntryError::DbError(e) => e.fmt(f),
         }
@@ -66,11 +71,9 @@ impl LoginDb {
                 } else {
                     Err(AuthError::IncorrectPassword)
                 }
-            },
+            }
             Ok(None) => Err(AuthError::NoUser),
-            Err(e) => {
-                Err(AuthError::DbError(e))
-            },
+            Err(e) => Err(AuthError::DbError(e)),
         }
     }
 
@@ -85,12 +88,17 @@ impl LoginDb {
                         Err(e) => Err(LoginEntryError::DbError(e)),
                     }
                 }
-            },
-            Err(e) => Err(LoginEntryError::DbError(db::Error::DbError(e)))
+            }
+            Err(e) => Err(LoginEntryError::DbError(db::Error::DbError(e))),
         }
     }
 
-    pub fn change_password(&self, username: &str, password: &str, default_password: bool) -> Result<(), AuthError> {
+    pub fn change_password(
+        &self,
+        username: &str,
+        password: &str,
+        default_password: bool,
+    ) -> Result<(), AuthError> {
         match self.db().fetch(username) {
             Ok(Some(mut entry)) => {
                 entry.password = password.to_owned();
@@ -99,12 +107,9 @@ impl LoginDb {
                     Ok(_) => Ok(()),
                     Err(e) => Err(AuthError::DbError(e)),
                 }
-            },
+            }
             Ok(None) => Err(AuthError::NoUser),
-            Err(e) => {
-                Err(AuthError::DbError(e))
-            },
+            Err(e) => Err(AuthError::DbError(e)),
         }
     }
 }
-

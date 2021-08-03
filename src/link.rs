@@ -1,8 +1,8 @@
-use serde::{Serialize, Deserialize};
 use crate::user::{UserAgent, UserKey};
-use std::time::{Duration, SystemTime};
-use std::path::Path;
 use crate::{db, define_uuid_key};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::time::{Duration, SystemTime};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Link {
@@ -21,18 +21,15 @@ define_uuid_key!(LinkToken);
 
 pub type LinkDb = db::Database<LinkToken, LinkEntry>;
 
-
 pub struct LinkManager {
     db: LinkDb,
 }
 
 impl LinkManager {
     pub fn open<P: AsRef<Path>>(path: P) -> sled::Result<Self> {
-        Ok(
-            Self {
-                db: LinkDb::open(path)?,
-            }
-        )
+        Ok(Self {
+            db: LinkDb::open(path)?,
+        })
     }
 
     pub fn db(&self) -> &LinkDb {
@@ -70,9 +67,9 @@ impl LinkManager {
                         Err(e) => Err(db::Error::DbError(e)),
                     }
                 }
-            },
+            }
             None => Ok(None),
-        }        
+        }
     }
 
     pub fn clear_expired_links(&self) {
