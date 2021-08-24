@@ -363,8 +363,8 @@ pub async fn create_account_post(
                     if form.password != form.confirm {
                         return create_account_page(ctx, &data, token, "Passwords do not match!");
                     }
-                    if !util::is_string_server_valid(&form.password) {
-                        return create_account_page(ctx, &data, token, "Invalid password string!");
+                    if !util::is_password_valid(&form.password) {
+                        return create_account_page(ctx, &data, token, "Invalid password! Password must be 6 characters or more.");
                     }
                     if !util::is_string_server_valid(&form.forename)
                         || !util::is_string_server_valid(&form.surname)
@@ -396,8 +396,7 @@ pub async fn create_account_post(
                                         r.header(http::header::LOCATION, dir::LOGIN_PAGE);
                                         r.body("")
                                     }
-                                    _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                                        .set_body(Body::from("No user!")),
+                                    _ => return create_account_page(ctx, &data, token, "User with this email address already exists!"),
                                 }
                             } else {
                                 HttpResponse::new(http::StatusCode::BAD_REQUEST)

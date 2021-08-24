@@ -142,11 +142,122 @@ pub async fn section_page(
         }
     };
 
+    let textarea_properties: String = {
+        if can_edit {
+            String::new()
+        } else {
+            "readonly".to_string()
+        }
+    };
+
     let desc: String = {
         match data.handlebars.render(&activity.activity_url, &()) {
             Ok(data) => data,
             Err(e) => format!("Failed to render: {}", e),
         }
+    };
+
+    let mut components: String = {
+        let mut buff: String = String::new();
+        for component in activity.form.iter() {
+            buff += &match component {
+                section::SectionComponent::HtmlText(text) => {
+                    text.clone()
+                },
+                section::SectionComponent::HtmlFile(path) => {
+                    match data.handlebars.render(&path, &()) {
+                        Ok(data) => data,
+                        Err(e) => format!("Failed to render: {}", e),
+                    }
+                },
+                section::SectionComponent::InputForm(entry) => {
+                    match &entry.ty {
+                        section::FormEntryType::Text { placeholder, rows } => {
+                            let mut value: String = String::new();
+                            if let Some(data) = section_instance.form_data.get(&entry.name) {
+                                if let section::FormEntryData::Text(text) = data {
+                                    value = text.clone();
+                                } else {
+                                    println!("Mismatched form data for form: {}", &entry.name);
+                                }
+                            }
+                            data.handlebars
+                                .render(
+                                    "sections/form/text_form",
+                                    &json!({
+                                            "name": &entry.name,
+                                            "placeholder": placeholder,
+                                            "rows": rows,
+                                            "textarea_properties": &textarea_properties,
+                                        }),
+                                ).unwrap()
+                        },
+                        section::FormEntryType::Radio(items) => {
+                            let mut selected: usize = 0;
+                            if let Some(data) = section_instance.form_data.get(&entry.name) {
+                                if let section::FormEntryData::Index(idx) = data {
+                                    selected = *idx;
+                                } else {
+                                    println!("Mismatched form data for form: {}", &entry.name);
+                                }
+                            }
+
+                            let mut items_str: String = String::new();
+                            for (i, item) in items.iter().enumerate() {
+                                items_str += &data.handlebars
+                                    .render(
+                                        "sections/form/form_item",
+                                        &json!({
+                                            "ty": "radio",
+                                            "name": &entry.name,
+                                            "value": i,
+                                            "text": item,
+                                            "textarea_properties": &textarea_properties,
+                                        }),
+                                    ).unwrap();
+                            }
+
+                            data.handlebars
+                                .render(
+                                    "sections/form/form_item_container",
+                                    &json!({
+                                        "title": &entry.title,
+                                        "text": &entry.text,
+                                        "items": &items_str,
+                                    }),
+                                ).unwrap()
+                        },
+                        section::FormEntryType::Checkbox(items) => {
+                            let mut items_str: String = String::new();
+                            for (i, item) in items.iter().enumerate() {
+                                items_str += &data.handlebars
+                                    .render(
+                                        "sections/form/form_item",
+                                        &json!({
+                                            "ty": "checkbox",
+                                            "name": entry.name.clone() + ":" + &i.to_string(),
+                                            "value": i,
+                                            "text": item,
+                                            "textarea_properties": &textarea_properties,
+                                        }),
+                                    ).unwrap();
+                            }
+
+                            data.handlebars
+                                .render(
+                                    "sections/form/form_item_container",
+                                    &json!({
+                                        "title": &entry.title,
+                                        "text": &entry.text,
+                                        "items": &items_str,
+                                    }),
+                                ).unwrap()
+                        },
+                    }
+                },
+            };
+        }
+        buff
     };
 
     let mut files: String = String::new();
@@ -241,14 +352,6 @@ pub async fn section_page(
         }
     };
 
-    let textarea_properties: String = {
-        if can_edit {
-            String::new()
-        } else {
-            "readonly".to_string()
-        }
-    };
-
     let submit_properties: String = {
         if can_edit {
             "class=\"submit-button\" type=\"submit\"".to_owned()
@@ -307,6 +410,7 @@ pub async fn section_page(
                 "delete_section_url": "/section/".to_owned() + &section_id.to_string() + "/delete",
                 "info_bubble": info_bubble,
                 "plan": &section_instance.plan,
+                "components": components,
                 "files": files,
                 "files_info": files_info,
                 "file_upload": file_upload,

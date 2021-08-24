@@ -876,3 +876,9 @@ b {
     padding: 10px;
     font-size: 18px;
 }
+
+.items-form-container {
+    width: 100%;
+    background-color: rgb(66, 65, 78);
+    border-radius: 5px;
+}

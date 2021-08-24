@@ -1,7 +1,9 @@
 use crate::{db, define_uuid_key, user};
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
+use std::collections::HashMap;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct SectionInfo {
     pub name: String,
     pub subtitle: String,
@@ -9,10 +11,49 @@ pub struct SectionInfo {
     pub image_url: String,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum SectionComponent {
+    HtmlText(String),
+    HtmlFile(String),
+    InputForm(FormEntry),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FormEntry {
+    pub title: String,
+    pub text: String,
+    pub name: String,
+    pub ty: FormEntryType,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FormEntryType {
+    Text {
+        placeholder: String,
+        rows: u32,
+    },
+    Checkbox(Vec<String>),
+    Radio(Vec<String>),
+}
+
+pub enum FormEntryData {
+    Text(String),
+    Index(usize),
+    Indices(Vec<usize>),
+}
+
+impl FormEntryType {
+    pub fn true_false_radio() -> Self {
+        Self::Radio(vec!["true".to_owned(), "false".to_owned()])
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Activity {
     pub name: String,
     pub subtitle: String,
     pub activity_url: String,
+    pub form: Vec<SectionComponent>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -93,6 +134,7 @@ pub struct Section {
     pub user_id: user::UserKey,
     pub plan: String,
     pub reflection: String,
+    pub form_data: HashMap<String, FormEntryData>,
     pub state: SectionState,
     pub outstanding: bool,
 }
@@ -111,12 +153,14 @@ impl Section {
             user_id,
             plan: String::new(),
             reflection: String::new(),
+            form_data: HashMap::new(),
             state: SectionState::InProgress,
             outstanding: false,
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct AwardInfo {
     pub name: String,
     pub short_name: String,
@@ -159,16 +203,19 @@ impl SectionInfo {
                         name: "Video Editing".to_owned(),
                         subtitle: "Emotional Intelligence & Self Expression".to_owned(),
                         activity_url: "sections/silver/creative/video_editing".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Up Your Skill Level".to_owned(),
                         subtitle: "Persistence and Resilience".to_owned(),
                         activity_url: "sections/silver/creative/up_your_skill".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Flashcards and Mindmaps".to_owned(),
                         subtitle: "Critical Thinking".to_owned(),
                         activity_url: "sections/silver/creative/flashcards".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -181,16 +228,19 @@ impl SectionInfo {
                         name: "Make do and Mend".to_owned(),
                         subtitle: "Persistence and Resilience".to_owned(),
                         activity_url: "sections/silver/money/mend".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Five Budget Meals".to_owned(),
                         subtitle: "Budgeting & Cookery".to_owned(),
                         activity_url: "sections/silver/money/meals".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Compare Prices".to_owned(),
                         subtitle: "Research & Negotiation Skills".to_owned(),
                         activity_url: "sections/silver/money/compare".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -203,16 +253,19 @@ impl SectionInfo {
                         name: "Maintenance".to_owned(),
                         subtitle: "Problem Solving".to_owned(),
                         activity_url: "sections/silver/home/maintenance".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Share your tech Knowledge".to_owned(),
                         subtitle: "Empathy, Adaptability & Mentoring".to_owned(),
                         activity_url: "sections/silver/home/tech".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Clean the Bathroom".to_owned(),
                         subtitle: "Perseverance".to_owned(),
                         activity_url: "sections/silver/home/bathroom".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -224,6 +277,7 @@ impl SectionInfo {
                     name: "First Aid".to_owned(),
                     subtitle: "Critical thinking".to_owned(),
                     activity_url: "sections/silver/first_aid/first_aid".to_owned(),
+                    form: Vec::new(),
                 }],
             },
             SectionInfo {
@@ -235,31 +289,37 @@ impl SectionInfo {
                         name: "Mile Run".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/silver/physical/mile_run".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Walk".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/silver/physical/walk".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Bike".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/silver/physical/bike".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Swim".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/silver/physical/swim".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Rowing or other Fitness Machine".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/silver/physical/machine".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Stretch and Relax".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/silver/physical/relax".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -272,16 +332,19 @@ impl SectionInfo {
                         name: "Outdoor Day Trips".to_owned(),
                         subtitle: "Decision Making & Navigation".to_owned(),
                         activity_url: "sections/silver/adventure/day_trip".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Go Camping".to_owned(),
                         subtitle: "Unplugging, Survival & Groundedness".to_owned(),
                         activity_url: "sections/silver/adventure/camping".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Climb Ben Nevis Challenge".to_owned(),
                         subtitle: "Problem Solving & Perseverance".to_owned(),
                         activity_url: "sections/silver/adventure/ben_nevis".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -299,16 +362,19 @@ impl SectionInfo {
                         name: "Up Your Skill Level".to_owned(),
                         subtitle: "Persistence and Resilience".to_owned(),
                         activity_url: "sections/gold/creative/up_your_skill".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Trailer Making".to_owned(),
                         subtitle: "Organisation & Prioritisation".to_owned(),
                         activity_url: "sections/gold/creative/trailer_making".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Create your Brand".to_owned(),
                         subtitle: "Self awareness & Effective Communication".to_owned(),
                         activity_url: "sections/gold/creative/brand".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -323,16 +389,19 @@ impl SectionInfo {
                             "Communication, Cooperation, coping with monotony, time management"
                                 .to_owned(),
                         activity_url: "sections/gold/money/saving".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Coupons".to_owned(),
                         subtitle: "Thriftiness".to_owned(),
                         activity_url: "sections/gold/money/coupons".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Live for Less".to_owned(),
                         subtitle: "Budgeting and Cooperating".to_owned(),
                         activity_url: "sections/gold/money/live_for_less".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -345,21 +414,25 @@ impl SectionInfo {
                         name: "Letter Writing".to_owned(),
                         subtitle: "Assertiveness".to_owned(),
                         activity_url: "sections/gold/home/letter".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Food Choices and Safety".to_owned(),
                         subtitle: "Health and Self Awareness".to_owned(),
                         activity_url: "sections/gold/home/food_safety".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Spring Clean".to_owned(),
                         subtitle: "Persistence".to_owned(),
                         activity_url: "sections/gold/home/spring_clean".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Drink Choices".to_owned(),
                         subtitle: "Health and Safety, Awareness of Peer Pressure".to_owned(),
                         activity_url: "sections/gold/home/drink".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -371,6 +444,7 @@ impl SectionInfo {
                     name: "First Aid".to_owned(),
                     subtitle: "Critical thinking".to_owned(),
                     activity_url: "sections/silver/first_aid/first_aid".to_owned(),
+                    form: Vec::new(),
                 }],
             },
             SectionInfo {
@@ -382,31 +456,37 @@ impl SectionInfo {
                         name: "5km Run".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/gold/physical/run".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "5km Walk".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/gold/physical/walk".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "10km Bike".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/gold/physical/bike".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Swim".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/gold/physical/swim".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Rowing or other Fitness Machine".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/gold/physical/machine".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Stretch and Relax".to_owned(),
                         subtitle: "Perseverance, Time Management & Health Behaviour".to_owned(),
                         activity_url: "sections/gold/physical/relax".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
@@ -419,16 +499,19 @@ impl SectionInfo {
                         name: "Go Camping".to_owned(),
                         subtitle: "Unplugging, Survival & Groundedness".to_owned(),
                         activity_url: "sections/gold/adventure/camping".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Walking Tour / Quiz".to_owned(),
                         subtitle: "Problem Solving & Creativity".to_owned(),
                         activity_url: "sections/gold/adventure/walking_tour".to_owned(),
+                        form: Vec::new(),
                     },
                     Activity {
                         name: "Map Reading, Adventure Day".to_owned(),
                         subtitle: "Planning, Adventurous spirit, Navigation".to_owned(),
                         activity_url: "sections/gold/adventure/adventure_day".to_owned(),
+                        form: Vec::new(),
                     },
                 ],
             },
