@@ -469,14 +469,14 @@ pub fn reset_password_post(
                         + "\">"
                         + "Click here</a> to change your account password.";
 
-                    if let Err(e) = data.send_email(
+                    if data.send_email(
                         &addr,
                         "Senior Duke - Change Your Password",
                         "Change Password",
                         &subtitle,
                         "",
-                    ) {
-                        println!("Failed to send email: {}", e);
+                    ).is_none() {
+                        println!("Failed to send email!");
                     }
                 }
             }

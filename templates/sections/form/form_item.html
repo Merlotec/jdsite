@@ -1,2 +1,6 @@
-<input type="{{ty}}" name="{{name}}" value="{{value}}" {{{textarea_properties}}}>
-<label for="{{value}}">{{{text}}}</label>
+<div class="form-item">
+    <input type="{{ty}}" name="{{name}}" value="{{value}}" {{{form_properties}}}
+    {{#if checked}} checked {{/if}}
+    >
+    <label for="{{value}}">{{{text}}}</label>
+</div>

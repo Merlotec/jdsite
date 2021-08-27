@@ -52,6 +52,7 @@ tr {
 a {
     font-style: normal;
     text-decoration: none;
+    color: #de9750;
 }
 
 b {
@@ -878,7 +879,26 @@ b {
 }
 
 .items-form-container {
+    padding: 20px;
     width: 100%;
     background-color: rgb(66, 65, 78);
     border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.form-items {
+    float: center;
+    display: block;
+    margin: auto;
+    text-align: center;
+}
+
+.form-item {
+    display: inline-block;
+    padding: 10px;
+    margin-right: 25px;
+}
+
+.inner-content {
+    text-align: left;
 }

@@ -69,3 +69,6 @@ pub fn client_path(org_id: org::OrgKey, user_id: user::UserKey) -> String {
 pub const SECTIONS_TITLE: &'static str = "Sections";
 
 pub const NOTIFICATION_INTERVAL_DAYS: u64 = 3;
+
+pub const HELP_PAGE: &'static str = "/help";
+pub const HELP_TITLE: &'static str = "Help";

@@ -384,6 +384,7 @@ impl SharedData {
     ) -> Vec<(String, String)> {
         match agent {
             UserAgent::Owner => vec![
+                (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
@@ -392,6 +393,7 @@ impl SharedData {
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
             UserAgent::Organisation(org_id) => vec![
+                (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
                 (
                     dir::org_path(*org_id) + dir::CLIENTS_PAGE,
                     dir::CLIENTS_TITLE.to_string(),
@@ -402,6 +404,7 @@ impl SharedData {
                 ),
             ],
             UserAgent::Associate(org_id) => vec![
+                (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
                 (
                     dir::org_path(*org_id) + dir::CLIENTS_PAGE,
                     dir::CLIENTS_TITLE.to_string(),
@@ -411,15 +414,18 @@ impl SharedData {
                     dir::UNREVIEWED_SECTIONS_TITLE.to_string(),
                 ),
             ],
-            UserAgent::Client { org_id, .. } => vec![(
-                dir::ORG_ROOT_PATH.to_string()
-                    + "/"
-                    + &org_id.to_string()
-                    + dir::CLIENT_ROOT_PATH
-                    + "/"
-                    + &user_key.to_string(),
-                dir::SECTIONS_TITLE.to_string(),
-            )],
+            UserAgent::Client { org_id, .. } => vec![
+                (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),    
+                (
+                    dir::ORG_ROOT_PATH.to_string()
+                        + "/"
+                        + &org_id.to_string()
+                        + dir::CLIENT_ROOT_PATH
+                        + "/"
+                        + &user_key.to_string(),
+                    dir::SECTIONS_TITLE.to_string(),
+                ),
+            ],
         }
     }
 
@@ -443,7 +449,7 @@ impl SharedData {
         title: &str,
         subtitle: &str,
         content: &str,
-    ) -> Result<lettre::smtp::response::Response, lettre::smtp::error::Error> {
+    ) -> Option<lettre::smtp::response::Response> {
         let body: String = self
             .handlebars
             .render(
@@ -464,10 +470,9 @@ impl SharedData {
             .subject(subject)
             .body(body)
             .header(("Content-Type", "text/html"))
-            .build()
-            .unwrap();
+            .build().ok()?;
 
         let mut mailer = self.mailer.lock().unwrap();
-        mailer.send(email.into())
+        mailer.send(email.into()).ok()
     }
 }

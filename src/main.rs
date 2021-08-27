@@ -131,6 +131,8 @@ async fn main() -> std::io::Result<()> {
             .service(page::unreviewed::unreviewed_get)
             // Outstanding
             .service(page::outstanding::outstanding_get)
+            // Help
+            .service(page::help::help_get)
             // Root
             .service(page::root_get)
 

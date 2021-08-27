@@ -6,6 +6,7 @@ pub mod outstanding;
 pub mod section;
 pub mod unreviewed;
 pub mod user;
+pub mod help;
 
 use std::sync::Arc;
 

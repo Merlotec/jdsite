@@ -20,19 +20,19 @@ pub async fn user_notification_process(data: Arc<SharedData>) {
                     if let Ok(Some(user)) = data.user_db.fetch(user_id) {
                         if user.notifications && unreviewed_count > 0 {
                             // Send email
-                            if let Err(e) = data.send_email(
+                            if data.send_email(
                                 &user.email,
                                 &format!("There are {} new unreviewed sections", unreviewed_count),
                                 "Unreviewed Sections",
                                 &format!("There are {} new unreviewed sections", unreviewed_count),
                                 "Sign in to your account to view these unread sections.",
-                            ) {
-                                println!("Failed to send notification email: {}", e);
+                            ).is_none() {
+                                println!("Failed to send notification email!");
                             } else {
                                 send_count += 1;
                             }
                         }
-                    }
+                }
                 }
 
                 println!("Sent {} notifications to org: {}", send_count, &org.name);

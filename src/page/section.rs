@@ -23,6 +23,11 @@ use section::SectionState;
 use user::Privilege;
 
 use actix_web::{get, post};
+use crate::section::FormEntryData;
+
+const TEXT_PAT: &'static str = "$text:";
+const RADIO_PAT: &'static str = "$radio:";
+const CHECK_PAT: &'static str = "$check:";
 
 pub fn choose_activities_page(
     data: &SharedData,
@@ -150,6 +155,14 @@ pub async fn section_page(
         }
     };
 
+    let form_properties: String = {
+        if can_edit {
+            String::new()
+        } else {
+            "onclick=\"return false\"".to_string()
+        }
+    };
+
     let desc: String = {
         match data.handlebars.render(&activity.activity_url, &()) {
             Ok(data) => data,
@@ -157,50 +170,57 @@ pub async fn section_page(
         }
     };
 
-    let mut components: String = {
+    let components: String = {
         let mut buff: String = String::new();
-        for component in activity.form.iter() {
+        for component in activity.components.iter() {
             buff += &match component {
-                section::SectionComponent::HtmlText(text) => {
+                section::ActivityComponent::HtmlText(text) => {
                     text.clone()
                 },
-                section::SectionComponent::HtmlFile(path) => {
+                section::ActivityComponent::HtmlFile(path) => {
                     match data.handlebars.render(&path, &()) {
                         Ok(data) => data,
                         Err(e) => format!("Failed to render: {}", e),
                     }
                 },
-                section::SectionComponent::InputForm(entry) => {
+                section::ActivityComponent::InputItem(entry) => {
                     match &entry.ty {
                         section::FormEntryType::Text { placeholder, rows } => {
                             let mut value: String = String::new();
-                            if let Some(data) = section_instance.form_data.get(&entry.name) {
+                            if let Some(data) = section_instance.input_data.get(&entry.name) {
                                 if let section::FormEntryData::Text(text) = data {
                                     value = text.clone();
                                 } else {
                                     println!("Mismatched form data for form: {}", &entry.name);
                                 }
                             }
+
+                            let name: String = TEXT_PAT.to_owned() + &entry.name;
+
                             data.handlebars
                                 .render(
                                     "sections/form/text_form",
                                     &json!({
-                                            "name": &entry.name,
+                                            "name": &name,
+                                            "title": &entry.title,
+                                            "text": &entry.text,
                                             "placeholder": placeholder,
+                                            "value": value,
                                             "rows": rows,
                                             "textarea_properties": &textarea_properties,
                                         }),
                                 ).unwrap()
                         },
                         section::FormEntryType::Radio(items) => {
-                            let mut selected: usize = 0;
-                            if let Some(data) = section_instance.form_data.get(&entry.name) {
+                            let mut selected_idx: usize = 0;
+                            if let Some(data) = section_instance.input_data.get(&entry.name) {
                                 if let section::FormEntryData::Index(idx) = data {
-                                    selected = *idx;
+                                    selected_idx = *idx;
                                 } else {
                                     println!("Mismatched form data for form: {}", &entry.name);
                                 }
                             }
+                            let name: String = RADIO_PAT.to_owned() + &entry.name;
 
                             let mut items_str: String = String::new();
                             for (i, item) in items.iter().enumerate() {
@@ -209,17 +229,18 @@ pub async fn section_page(
                                         "sections/form/form_item",
                                         &json!({
                                             "ty": "radio",
-                                            "name": &entry.name,
+                                            "name": &name,
                                             "value": i,
                                             "text": item,
-                                            "textarea_properties": &textarea_properties,
+                                            "form_properties": &form_properties,
+                                            "checked": i == selected_idx,
                                         }),
                                     ).unwrap();
                             }
 
                             data.handlebars
                                 .render(
-                                    "sections/form/form_item_container",
+                                    "sections/form/items_form_container",
                                     &json!({
                                         "title": &entry.title,
                                         "text": &entry.text,
@@ -228,24 +249,36 @@ pub async fn section_page(
                                 ).unwrap()
                         },
                         section::FormEntryType::Checkbox(items) => {
+                            let mut selected_indices: &[usize] = &[];
+                            if let Some(data) = section_instance.input_data.get(&entry.name) {
+                                if let section::FormEntryData::Indices(indices) = data {
+                                    selected_indices = indices;
+                                } else {
+                                    println!("Mismatched form data for form: {}", &entry.name);
+                                }
+                            }
+
                             let mut items_str: String = String::new();
                             for (i, item) in items.iter().enumerate() {
+                                let name: String = CHECK_PAT.to_owned() + &i.to_string() + ":" + &entry.name;
+
                                 items_str += &data.handlebars
                                     .render(
                                         "sections/form/form_item",
                                         &json!({
                                             "ty": "checkbox",
-                                            "name": entry.name.clone() + ":" + &i.to_string(),
+                                            "name": name,
                                             "value": i,
                                             "text": item,
-                                            "textarea_properties": &textarea_properties,
+                                            "form_properties": &form_properties,
+                                            "checked": selected_indices.contains(&i),
                                         }),
                                     ).unwrap();
                             }
 
                             data.handlebars
                                 .render(
-                                    "sections/form/form_item_container",
+                                    "sections/form/items_form_container",
                                     &json!({
                                         "title": &entry.title,
                                         "text": &entry.text,
@@ -730,9 +763,9 @@ pub async fn upload_section_post(
     data: web::Data<Arc<SharedData>>,
     req: HttpRequest,
     mut payload: Multipart,
-    section: web::Path<String>,
+    section_path: web::Path<String>,
 ) -> HttpResponse {
-    if let Ok(section_id) = section::SectionKey::from_str(&section) {
+    if let Ok(section_id) = section::SectionKey::from_str(&section_path) {
         // iterate over multipart stream
         match data.authenticate_context_from_request(&req, true) {
             Ok(Some(ctx)) => {
@@ -821,7 +854,54 @@ pub async fn upload_section_post(
                                                         .await;
                                                     }
                                                 }
-                                                _ => {}
+                                                _ => {
+                                                    let activity = &data.awards[section_instance.award_index].sections[section_instance.section_index].activities[section_instance.activity_index];
+
+                                                    if let Some(idx) = name.find(TEXT_PAT) {
+                                                        let name_idx = idx + TEXT_PAT.len();
+
+                                                        let key: &str = &name[name_idx..];
+
+                                                        if activity.contains_input_component(key) {
+                                                            section_instance.input_data.insert(key.to_owned(), FormEntryData::Text(value));
+                                                        } else {
+                                                            println!("Unexpected error... The section doesn't contain a text component with the given name {}", key);
+                                                        }
+                                                    } else if let Some(idx) = name.find(RADIO_PAT) {
+                                                        let name_idx = idx + RADIO_PAT.len();
+
+                                                        let key: &str = &name[name_idx..];
+
+                                                        if let Ok(selected_idx) = value.parse::<usize>() {
+                                                            if activity.contains_input_component(key) {
+                                                                section_instance.input_data.insert(key.to_string(), FormEntryData::Index(selected_idx));
+                                                            } else {
+                                                                println!("Unexpected error... The section doesn't contain a radio button with the given name {}", key);
+                                                            }
+                                                        } else {
+                                                            println!("Unexpected error... Failed to parse radio button index!");
+                                                        }
+                                                    } else if let Some(idx) = name.find(CHECK_PAT) {
+                                                        let name_idx = idx + CHECK_PAT.len();
+                                                        let content_string: &str = &name[name_idx..];
+                                                        if let Some((idx_str, key)) = content_string.split_once(':') {
+                                                            if activity.contains_input_component(key) {
+                                                                if let Ok(idx) = idx_str.parse::<usize>() {
+                                                                    if let Some(FormEntryData::Indices(ref mut data)) = section_instance.input_data.get_mut(key) {
+                                                                        data.push(idx);
+                                                                    } else {
+                                                                        section_instance.input_data.insert(key.to_string(), FormEntryData::Indices(vec![idx]));
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                println!("Unexpected error... The section doesn't contain a checkbox with the given name {}, idx: {}, content: {}", key, idx_str, content_string);
+                                                            }
+
+                                                        } else {
+                                                            println!("Unexpected error... Failed to parse checkbox button index!");
+                                                        }
+                                                    }
+                                                },
                                             }
                                         }
                                     }

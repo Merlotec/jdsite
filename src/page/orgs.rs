@@ -218,14 +218,14 @@ pub async fn assign_admin_post(
                             + "\">"
                             + "Click here</a> to create your organisation account.";
 
-                        if let Err(e) = data.send_email(
+                        if data.send_email(
                             &addr,
                             "Senior Duke - Create Your Account",
                             "Create Organisation Account",
                             &subtitle,
                             "",
-                        ) {
-                            println!("Failed to send email: {}", e);
+                        ).is_none() {
+                            println!("Failed to send email!");
                         }
 
                         let mut r = HttpResponse::SeeOther();
