@@ -373,7 +373,10 @@ impl SharedData {
     pub fn nav_items_for_context(&self, ctx: Option<AuthContext>) -> Vec<(String, String)> {
         match ctx {
             Some(ctx) => self.nav_items_for_agent(&ctx.user_id, &ctx.user.user_agent),
-            None => vec![(dir::LOGIN_PAGE.to_owned(), dir::LOGIN_TITLE.to_owned())],
+            None => vec![
+                (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
+                (dir::LOGIN_PAGE.to_owned(), dir::LOGIN_TITLE.to_owned()),
+            ],
         }
     }
 

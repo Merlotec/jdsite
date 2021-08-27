@@ -460,8 +460,7 @@ pub fn reset_password_post(
                     std::time::Duration::from_secs(dir::CHANE_PASSWORD_LINK_TIMEOUT_SECS),
                 ) {
                     // send email.
-                    let link: String =
-                        "/user/change_password/".to_string() + &link_token.to_string();
+                    let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
                     let addr: String = form.username.clone();
 
                     let subtitle: String = "<a href=\"".to_owned()

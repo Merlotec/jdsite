@@ -315,15 +315,15 @@ pub async fn add_client_post(
                                         Ok(user_id) => {
                                             if let Ok(link_token) = data.link_manager.create_link(link::Link::ChangePassword(user_id), std::time::Duration::from_secs(dir::CHANE_PASSWORD_LINK_TIMEOUT_SECS)) {
                                                 // send email.
-                                                let link: String = "/user/change_password/".to_string() + &link_token.to_string();
+                                                let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
                                                 let addr: String = form.email.clone();
                         
-                                                let subtitle: String = "<a href=\"".to_owned() + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
+                                                let subtitle: String = "You have successfully been signed up to Senior Duke! <a href=\"".to_owned() + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
                         
                                                 if data.send_email(
                                                     &addr, 
-                                                    "Senior Duke - Change Your Password", 
-                                                    "Change Password",
+                                                    "Senior Duke - Welcome & Password Info", 
+                                                    "Senior Duke - Welcome & Password Info",
                                                     &subtitle, 
                                                     ""
                                                 ).is_none() {

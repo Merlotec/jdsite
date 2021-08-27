@@ -1,5 +1,7 @@
 use crate::*;
 
+pub const HOST: &'static str = "seniorportal.juniorduke.com";
+
 // Misc
 pub const AUTH_COOKIE: &'static str = "Auth";
 pub const LOGIN_REDIRECT_COOKIE: &'static str = "LoginRedirect";
@@ -72,3 +74,7 @@ pub const NOTIFICATION_INTERVAL_DAYS: u64 = 3;
 
 pub const HELP_PAGE: &'static str = "/help";
 pub const HELP_TITLE: &'static str = "Help";
+
+pub fn make_absolute_url(path: &str) -> String {
+    "https://".to_owned() + HOST + path
+}

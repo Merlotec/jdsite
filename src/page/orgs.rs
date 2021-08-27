@@ -209,8 +209,7 @@ pub async fn assign_admin_post(
                 ) {
                     Ok(link_token) => {
                         // Send email
-                        let link: String =
-                            "/user/create_account/".to_string() + &link_token.to_string();
+                        let link: String = dir::make_absolute_url(&("/user/create_account/".to_string() + &link_token.to_string()));
                         let addr: String = form.email.clone();
 
                         let subtitle = "<a href=\"".to_owned()
