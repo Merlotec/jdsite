@@ -463,7 +463,7 @@ impl SharedData {
                     "content": content,
                 }),
             )
-            .unwrap();
+            .ok()?;
 
         let email = lettre_email::Email::builder()
             // Addresses can be specified by the tuple (email, alias)
@@ -475,7 +475,7 @@ impl SharedData {
             .header(("Content-Type", "text/html"))
             .build().ok()?;
 
-        let mut mailer = self.mailer.lock().unwrap();
+        let mut mailer = self.mailer.lock().ok()?;
         mailer.send(email.into()).ok()
     }
 }
