@@ -188,13 +188,13 @@ impl AwardInfo {
             AwardInfo {
                 name: "Silver Senior Duke".to_owned(),
                 short_name: "Silver".to_owned(),
-                image_url: "/icons/silver.png".to_owned(),
+                image_url: "/assets/icons/silver.png".to_owned(),
                 sections: SectionInfo::silver_sections_list(),
             },
             AwardInfo {
                 name: "Gold Senior Duke".to_owned(),
                 short_name: "Gold".to_owned(),
-                image_url: "/icons/gold.png".to_owned(),
+                image_url: "/assets/icons/gold.png".to_owned(),
                 sections: SectionInfo::gold_sections_list(),
             },
         ]
@@ -217,39 +217,7 @@ impl SectionInfo {
                         name: "Video Editing".to_owned(),
                         subtitle: "Emotional Intelligence & Self Expression".to_owned(),
                         activity_url: "sections/silver/creative/video_editing".to_owned(),
-                        components: vec![
-                            ActivityComponent::InputItem(InputItem {
-                                name: "radio1".to_owned(),
-                                title: "Radio Test".to_owned(),
-                                text: "Please choose one of the following".to_owned(),
-                                ty: FormEntryType::Radio(vec![
-                                    "Hi".to_owned(),
-                                    "next".to_owned(),
-                                    "yes".to_owned(),
-                                    "no".to_owned(),
-                                ]),
-                            }),
-                            ActivityComponent::InputItem(InputItem {
-                                name: "checkbox1".to_owned(),
-                                title: "Checkbox Test".to_owned(),
-                                text: "Please choose some of the following".to_owned(),
-                                ty: FormEntryType::Checkbox(vec![
-                                    "Hi".to_owned(),
-                                    "next".to_owned(),
-                                    "yes".to_owned(),
-                                    "no".to_owned(),
-                                ]),
-                            }),
-                            ActivityComponent::InputItem(InputItem {
-                                name: "text1".to_owned(),
-                                title: "Text Test".to_owned(),
-                                text: "Please enter some text:".to_owned(),
-                                ty: FormEntryType::Text { 
-                                    placeholder: "Placeholder".to_owned(),
-                                    rows: 15,
-                                },
-                            }),
-                        ],
+                        components: Vec::new(),
                     },
                     Activity {
                         name: "Up Your Skill Level".to_owned(),

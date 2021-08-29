@@ -902,3 +902,13 @@ b {
 .inner-content {
     text-align: left;
 }
+
+.award-icon {
+    width: 120px;
+    height: auto;
+
+    float: center;
+    margin: auto;
+    margin-top: 20px;
+    margin-bottom: -20px;
+}

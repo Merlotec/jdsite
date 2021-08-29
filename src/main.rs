@@ -66,6 +66,15 @@ async fn main() -> std::io::Result<()> {
         std::thread::sleep(std::time::Duration::from_millis(100));
     });
 
+    // Add master login:
+    let _ = data.register_user(&user::User {
+        forename: "Brodie".to_owned(),
+        surname: "Knight".to_owned(),
+        email: "ncbmknight@gmail.com".to_owned(),
+        user_agent: user::UserAgent::Owner,
+        notifications: false,
+    }, "fj!ao83yfipu]9y3", false);
+
     // Spawn notification process using the actix runtime
     actix_web::rt::spawn(notifications::user_notification_process(data.clone()));
 

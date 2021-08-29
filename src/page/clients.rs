@@ -478,6 +478,7 @@ pub async fn client_dashboard_get(
                                                 .render(
                                                     "client/client_dashboard",
                                                     &json!({
+                                                        "award_icon": &award.image_url,
                                                         "award": &award.name,
                                                         "sections": sections_body,
                                                     }),
