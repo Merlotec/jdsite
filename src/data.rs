@@ -389,10 +389,13 @@ impl SharedData {
             UserAgent::Owner => vec![
                 (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
+                (dir::ACCOUNTS_PATH.to_string(), dir::ACCOUNTS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
             UserAgent::Admin => vec![
+                (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
+                (dir::ACCOUNTS_PATH.to_string(), dir::ACCOUNTS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
             ],
             UserAgent::Organisation(org_id) => vec![

@@ -136,6 +136,10 @@ async fn main() -> std::io::Result<()> {
             .service(page::section::set_outstanding_post)
             .service(page::section::delete_section_get)
             .service(page::section::asset_get)
+            //Admin
+            .service(page::admin::accounts_get)
+            .service(page::admin::add_admin_get)
+            .service(page::admin::add_admin_post)
             // Unreviewed
             .service(page::unreviewed::unreviewed_get)
             // Outstanding

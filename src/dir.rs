@@ -41,6 +41,11 @@ pub fn org_path(org_id: org::OrgKey) -> String {
     ORG_ROOT_PATH.to_owned() + "/" + &org_id.to_string()
 }
 
+
+pub const ACCOUNTS_PATH: &'static str = "/admin/accounts";
+pub const ACCOUNTS_TITLE: &'static str = "User Accounts";
+pub const ADD_ADMIN_PATH: &'static str = "/admin/add_admin";
+
 pub const ADD_ORG_PATH: &'static str = "/add_org";
 pub const DELETE_ORG_PATH: &'static str = "/del_org";
 pub const ADD_CREDITS_PATH: &'static str = "/add_credits";

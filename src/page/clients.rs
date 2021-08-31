@@ -293,7 +293,7 @@ pub async fn add_client_post(
                             if org.credits > 0 {
                                 if util::is_string_server_valid(&form.forename)
                                     && util::is_string_server_valid(&form.surname)
-                                    && util::is_string_server_valid(&form.email)
+                                    && util::is_email_valid(&form.email)
                                     && util::is_string_server_valid(&form.class)
                                 {
                                     let user: user::User = user::User {

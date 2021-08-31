@@ -231,7 +231,7 @@ pub async fn add_associate_get(
 }
 
 #[derive(serde::Deserialize)]
-pub struct AddClientForm {
+pub struct AddAssociateForm {
     forename: String,
     surname: String,
     email: String,
@@ -241,7 +241,7 @@ pub struct AddClientForm {
 pub async fn add_associate_post(
     data: web::Data<Arc<SharedData>>,
     req: HttpRequest,
-    form: web::Form<AddClientForm>,
+    form: web::Form<AddAssociateForm>,
     org_path_str: web::Path<String>,
 ) -> HttpResponse {
     if let Ok(org_id) = org::OrgKey::from_str(&org_path_str) {
@@ -252,7 +252,7 @@ pub async fn add_associate_post(
                         Ok(Some(org)) => {
                             if util::is_string_server_valid(&form.forename)
                                 && util::is_string_server_valid(&form.surname)
-                                && util::is_string_server_valid(&form.email)
+                                && util::is_email_valid(&form.email)
                             {
                                 let user: user::User = user::User {
                                     email: form.email.clone(),

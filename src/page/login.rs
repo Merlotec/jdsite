@@ -311,11 +311,11 @@ pub fn create_account_page(
                         .set_body(Body::from(format!("Create Password Render Error: {}", e))),
                 }
             } else {
-                HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("bad link"))
+                HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("bad link - link already used"))
             }
         }
         Ok(None) => {
-            HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("bad link"))
+            HttpResponse::new(http::StatusCode::BAD_REQUEST).set_body(Body::from("bad link - link doesn't exist"))
         }
 
         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
@@ -368,7 +368,7 @@ pub async fn create_account_post(
                     }
                     if !util::is_string_server_valid(&form.forename)
                         || !util::is_string_server_valid(&form.surname)
-                        || !util::is_string_server_valid(&form.email)
+                        || !util::is_email_valid(&form.email)
                     {
                         return create_account_page(ctx, &data, token, "Invalid user details!");
                     }
@@ -400,11 +400,11 @@ pub async fn create_account_post(
                                 }
                             } else {
                                 HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                                    .set_body(Body::from("bad link"))
+                                    .set_body(Body::from("bad link - link already used"))
                             }
                         }
                         Ok(None) => HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                            .set_body(Body::from("bad link")),
+                            .set_body(Body::from("bad link - link doen't exist")),
 
                         Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                             .set_body(Body::from(format!("Logout Error: {}", e))),

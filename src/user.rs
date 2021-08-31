@@ -22,6 +22,7 @@ impl User {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Privilege {
     RootLevel,
+    AdminLevel,
     OrgLevel,
     ClientLevel,
 }
@@ -31,7 +32,8 @@ impl Privilege {
         match self {
             Privilege::ClientLevel => 1,
             Privilege::OrgLevel => 2,
-            Privilege::RootLevel => 3,
+            Privilege::AdminLevel => 3,
+            Privilege::RootLevel => 4,
         }
     }
 
@@ -68,6 +70,14 @@ impl UserAgent {
         }
     }
 
+    pub fn is_owner(&self) -> bool {
+        if let UserAgent::Owner = self {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn root_page(&self, user_id: UserKey) -> String {
         match self {
             UserAgent::Owner => dir::ORGS_PAGE.to_owned(),
@@ -81,10 +91,18 @@ impl UserAgent {
     pub fn privilege(&self) -> Privilege {
         match self {
             UserAgent::Owner => Privilege::RootLevel,
-            UserAgent::Admin => Privilege::RootLevel,
+            UserAgent::Admin => Privilege::AdminLevel,
             UserAgent::Organisation(_) => Privilege::OrgLevel,
             UserAgent::Associate(_) => Privilege::OrgLevel,
             UserAgent::Client { .. } => Privilege::ClientLevel,
+        }
+    }
+
+    pub fn can_view_accounts(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            _ => false,
         }
     }
 
@@ -111,6 +129,13 @@ impl UserAgent {
             UserAgent::Organisation(agent_org_id) => agent_org_id == org_id,
             UserAgent::Associate(agent_org_id) => agent_org_id == org_id,
             UserAgent::Client { .. } => false,
+        }
+    }
+
+    pub fn can_add_admin(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            _ => false,
         }
     }
 

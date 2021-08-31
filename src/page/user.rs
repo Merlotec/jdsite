@@ -23,17 +23,23 @@ pub async fn user_get(
         match data.user_db.fetch(&user_id) {
             Ok(Some(user)) => match data.authenticate_context_from_request(&req, true) {
                 Ok(Some(ctx)) => {
-                    let mut can_view_org: bool = false;
+                    let mut can_view_user: bool = false;
 
                     if let Some(org_id) = user.user_agent.org_id() {
                         if ctx.user.user_agent.can_view_org(&org_id) {
-                            can_view_org = true;
+                            can_view_user = true;
+                        }
+                    } else {
+                        if ctx.user.user_agent.privilege().is_root() {
+                            can_view_user = true;
+                        } else if ctx.user.user_agent.privilege().magnitude() > user.user_agent.privilege().magnitude() {
+                            can_view_user = true;
                         }
                     }
 
                     let is_active_user = ctx.user_id == user_id;
 
-                    if is_active_user || can_view_org {
+                    if is_active_user || can_view_user {
                         let mut attrs: String = String::new();
 
                         attrs += &data

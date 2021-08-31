@@ -1,0 +1,106 @@
+<script>
+    function inputKeyPressed(event) {
+        var key = event.keyCode;
+        if (key==13) {
+            searchUsers();
+        }
+    }
+
+    function searchUsers() {
+        var searchString = document.getElementById('userSearchInput').value.trim();
+
+        if (searchString.length > 0) {
+            var call = `{{search_url}}?search=${encodeURIComponent(searchString)}`;
+            window.location.href = call;
+        }
+    }
+
+    function showModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "block";
+    }
+
+    function closeModal(id) {
+        var modal = document.getElementById(id);
+        modal.style.display = "none";
+    }
+
+    function registerModal(id) {
+        var modal = document.getElementById(id);
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    }
+
+    function showDeleteUserModal(userId, userName) {
+        var text = document.getElementById('deleteUserModalTitle');
+        text.innerText = 'Delete ' + userName;
+
+        var userIdInput = document.getElementById('deleteUserModalUserId');
+        userIdInput.value = userId;
+
+        showModal('deleteUserModal');
+    }
+
+  </script>
+
+<div class="container">
+    <div class="center-content">
+        <h2>User Accounts</h2>
+        {{#if can_add_admin}}
+        <div class="bubble-large" style="max-width: 800px;">
+            <p style="text-align: center;">
+                As an owner, you can create other global administrator accounts to help manage Senior Duke. 
+                <br>
+                Administrator accounts will have most of the access that owners have, with the exception of being able to create other admin accounts.
+                <br>
+                <p style="text-align: center;">
+                    <a href="{{add_admin_url}}">Click here</a> to create a global administrator account.
+                </p>
+            </p>
+        </div>
+        {{/if}}
+        <h4 style="text-align: center;">
+            Enter the name or email address of a user to search for them.
+            <br>
+            {{#if not_viewing_all}}
+            If you want to see a full list of accounts, <a href="{{search_url}}?view_all=true">click here</a>.
+            {{/if}}
+        </h4>
+        <div class="table-content">
+            <input type="text" class="input-box" onkeydown="inputKeyPressed(event)" id="userSearchInput" style="float:center; margin-right: 20px;" placeholder="Search users..."/>
+            <button title="Search Accounts..." class="submit-button" style="float: center;" onclick="searchUsers()">Search</button>
+            <br><br>
+            {{#if display_user_table}}
+            <table class="user-table" id="userTable">
+                <tr class="table-header">
+                    <th style="width:35%;">Name</th>
+                    <th style="width:30%;">Email</th>
+                    <th style="width:30%;">Role</th>
+                    <th style="width:5%;"></th>
+                </tr>
+                {{{user_rows}}}
+            </table>
+            {{/if}}
+        </div>
+    </div>
+</div>
+
+<div id="deleteUserModal" class="modal">
+    <div class="modal-content">
+        <span onclick="closeModal('deleteUserModal')" class="modal-close">&times;</span>
+        <h2 id="deleteUserModalTitle" style="text-align: center;">
+            Delete Account
+        </h2>
+        <h4 style="text-align: center;">Are you sure you want to delete this account? Deleted accounts cannot be recovered.</h4>
+        <br>
+        <form style="text-align: center;" method="POST" action="{{delete_user_url}}">
+            <input id="deleteUserModalUserId" name="user_id" type="hidden" value=""></input>
+            <input id="deleteUserModalSubmit" style="margin: auto;" class="submit-button" type="submit" value="Delete"/>
+            <br><br>
+        </form>
+    </div>
+</div>
