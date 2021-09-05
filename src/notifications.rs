@@ -5,7 +5,7 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 pub async fn user_notification_process(data: Arc<SharedData>) {
-    println!("Starting user notification process...");
+    log::trace!("Starting user notification process...");
     loop {
         let now = SystemTime::now();
         data.org_db.for_each_write(|mut org| {
@@ -27,7 +27,7 @@ pub async fn user_notification_process(data: Arc<SharedData>) {
                                 &format!("There are {} new unreviewed sections", unreviewed_count),
                                 "Sign in to your account to view these unread sections.",
                             ).is_none() {
-                                println!("Failed to send notification email!");
+                                log::warn!("Failed to send notification email!");
                             } else {
                                 send_count += 1;
                             }
@@ -35,7 +35,7 @@ pub async fn user_notification_process(data: Arc<SharedData>) {
                 }
                 }
 
-                println!("Sent {} notifications to org: {}", send_count, &org.name);
+                log::trace!("Sent {} notifications to org: {}", send_count, &org.name);
 
                 org.last_notification = now;
             }

@@ -231,7 +231,7 @@ pub async fn add_admin_post(
                                             &subtitle, 
                                             ""
                                         ).is_none() {
-                                            println!("Failed to send email!");
+                                            log::error!("Failed to send email!");
                                         }
                                     }
 

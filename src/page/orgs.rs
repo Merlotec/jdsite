@@ -224,9 +224,9 @@ pub async fn assign_admin_post(
                             &subtitle,
                             "",
                         ).is_none() {
-                            println!("Failed to send email!");
+                            log::error!("Failed to send email!");
                         } else {
-                            println!("Sent admin email to: {}", addr);
+                            log::trace!("Sent admin email to: {}", addr);
                         }
 
                         let mut r = HttpResponse::SeeOther();

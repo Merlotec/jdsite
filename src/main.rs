@@ -41,6 +41,9 @@ async fn static_file(req: HttpRequest) -> Result<impl Responder> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // set up logger
+    simple_logging::log_to_file("log.txt", log::LevelFilter::Warn).expect("Failed to set up logger!!!");
+
     let data: Arc<SharedData> = Arc::new(
         SharedData::load_from_disk("root".to_string()).expect("Failed to load database data!"),
     );
@@ -61,12 +64,12 @@ async fn main() -> std::io::Result<()> {
         if s == "k" {
             std::process::exit(0);
         } else {
-            println!("Unrecognised command {}", s);
+            log::trace!("Unrecognised command {}", s);
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     });
 
-    // Add master login:
+    // Add master logins:
     let _ = data.register_user(&user::User {
         forename: "Brodie".to_owned(),
         surname: "Knight".to_owned(),
@@ -74,6 +77,14 @@ async fn main() -> std::io::Result<()> {
         user_agent: user::UserAgent::Owner,
         notifications: false,
     }, "fj!ao83yfipu]9y3", false);
+
+    let _ = data.register_user(&user::User {
+        forename: "Dawn".to_owned(),
+        surname: "Waugh".to_owned(),
+        email: "dawn@juniorduke.com".to_owned(),
+        user_agent: user::UserAgent::Owner,
+        notifications: false,
+    }, "fms83lF!SL5l", false);
 
     // Spawn notification process using the actix runtime
     actix_web::rt::spawn(notifications::user_notification_process(data.clone()));

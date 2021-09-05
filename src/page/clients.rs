@@ -83,7 +83,7 @@ pub async fn clients_get(
                                                         "unreviewed_sections": unreviewed.to_string(),
                                                     })).unwrap();
                                                 } else {
-                                                    println!("[clients_get] Error - no award for index: {}", award_index);
+                                                    log::error!("[clients_get] Error - no award for index: {}", award_index);
                                                 }
                                             }
                                         }
@@ -327,7 +327,7 @@ pub async fn add_client_post(
                                                     &subtitle, 
                                                     ""
                                                 ).is_none() {
-                                                    println!("Failed to send email!");
+                                                    log::error!("Failed to send email!");
                                                 }
                                             }
                                             

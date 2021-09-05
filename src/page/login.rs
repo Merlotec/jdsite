@@ -475,7 +475,7 @@ pub fn reset_password_post(
                         &subtitle,
                         "",
                     ).is_none() {
-                        println!("Failed to send email!");
+                        log::error!("Failed to send email!");
                     }
                 }
             }
