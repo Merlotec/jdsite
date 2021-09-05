@@ -291,11 +291,36 @@ pub async fn add_client_post(
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
                             if org.credits > 0 {
-                                if util::is_string_server_valid(&form.forename)
-                                    && util::is_string_server_valid(&form.surname)
-                                    && util::is_email_valid(&form.email)
-                                    && util::is_string_server_valid(&form.class)
-                                {
+
+                                if !util::is_string_server_valid(&form.forename){
+                                    add_client_page(
+                                        data,
+                                        req,
+                                        org_path_str,
+                                        "Invalid pupil forname provided",
+                                    )
+                                } else if !util::is_string_server_valid(&form.surname) {
+                                    add_client_page(
+                                        data,
+                                        req,
+                                        org_path_str,
+                                        "Invalid pupil surname provided",
+                                    )
+                                } else if !util::is_email_valid(&form.email) {
+                                    add_client_page(
+                                        data,
+                                        req,
+                                        org_path_str,
+                                        "Invalid pupil email provided",
+                                    )
+                                } else if !util::is_optional_string_server_valid(&form.class) {
+                                    add_client_page(
+                                        data,
+                                        req,
+                                        org_path_str,
+                                        "Invalid class name provided",
+                                    )
+                                } else {
                                     let user: user::User = user::User {
                                         email: form.email.clone(),
                                         forename: form.forename.clone(),
@@ -372,13 +397,6 @@ pub async fn add_client_post(
                                         Err(login::LoginEntryError::UsernameExists) =>  add_client_page(data, req, org_path_str, "This email is associated with another account!"),
                                         Err(e) =>  add_client_page(data, req, org_path_str, &format!("Something went wrong: ensure that the email is unique: {}", e)),
                                     }
-                                } else {
-                                    add_client_page(
-                                        data,
-                                        req,
-                                        org_path_str,
-                                        "Invalid pupil details provided!",
-                                    )
                                 }
                             } else {
                                 add_client_page(data, req, org_path_str, "No more pupil credits remaining! Please contact support to purchase more.")

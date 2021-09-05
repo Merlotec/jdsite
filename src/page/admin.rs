@@ -202,74 +202,83 @@ pub async fn add_admin_post(
     match data.authenticate_context_from_request(&req, true) {
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_add_admin() {
-                if util::is_string_server_valid(&form.forename)
-                            && util::is_string_server_valid(&form.surname)
-                            && util::is_email_valid(&form.email)
-                        {
-                            let user: user::User = user::User {
-                                email: form.email.clone(),
-                                forename: form.forename.clone(),
-                                surname: form.surname.clone(),
-                                notifications: true,
-                                user_agent: user::UserAgent::Admin,
-                            };
+                if !util::is_string_server_valid(&form.forename) {
+                    add_admin_page(
+                        data,
+                        req,
+                        "Invalid forename provided",
+                    )
+                } else if !util::is_string_server_valid(&form.surname) {
+                    add_admin_page(
+                        data,
+                        req,
+                        "Invalid surname provided",
+                    )
+                } else if !util::is_email_valid(&form.email) {
+                    add_admin_page(
+                        data,
+                        req,
+                        "Invalid email provided",
+                    )
+                } else {
+                    let user: user::User = user::User {
+                        email: form.email.clone(),
+                        forename: form.forename.clone(),
+                        surname: form.surname.clone(),
+                        notifications: true,
+                        user_agent: user::UserAgent::Admin,
+                    };
 
-                            let password: String = util::gen_password(8);
+                    let password: String = util::gen_password(8);
 
-                            match data.register_user(&user, &password, true)  {
-                                Ok(user_id) => {
-                                    if let Ok(link_token) = data.link_manager.create_link(link::Link::ChangePassword(user_id), std::time::Duration::from_secs(dir::CHANE_PASSWORD_LINK_TIMEOUT_SECS)) {
-                                        // send email.
-                                        let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
-                                        let addr: String = form.email.clone();
-                                        let subtitle: String = "You have successfully been registered for a Senior Duke admin account! ".to_owned() + "<a href=\"" + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
-                
-                                        if data.send_email(
-                                            &addr, 
-                                            "Senior Duke - Welcome & Password Info", 
-                                            "Senior Duke - Welcome & Password Info",
-                                            &subtitle, 
-                                            ""
-                                        ).is_none() {
-                                            log::error!("Failed to send email!");
-                                        }
-                                    }
-
-                                    let mut attrs: String = String::new();
-
-                                    attrs += &data.handlebars.render("user/user_attribute", &json!({
-                                        "attribute_name": "Username",
-                                        "attribute_value": user.email,
-                                    })).unwrap();
+                    match data.register_user(&user, &password, true)  {
+                        Ok(user_id) => {
+                            if let Ok(link_token) = data.link_manager.create_link(link::Link::ChangePassword(user_id), std::time::Duration::from_secs(dir::CHANE_PASSWORD_LINK_TIMEOUT_SECS)) {
+                                // send email.
+                                let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
+                                let addr: String = form.email.clone();
+                                let subtitle: String = "You have successfully been registered for a Senior Duke admin account! ".to_owned() + "<a href=\"" + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
         
-                                    attrs += "<br><br>";
-                                    attrs += &data.handlebars.render("user/user_attribute", &json!({
-                                        "attribute_name": "Password",
-                                        "attribute_value": password,
-                                    })).unwrap();
-
-                                    let content = data.handlebars.render("admin/admin_added", &json!({
-                                        "back_url": dir::ACCOUNTS_PATH,
-                                        "add_admin_url": dir::ADD_ADMIN_PATH,
-                                        "attributes": attrs,
-                                    })).unwrap();
-        
-                                    let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Associate Account Created", dir::APP_NAME.to_owned(), content).unwrap();
-        
-                                    HttpResponse::new(http::StatusCode::OK)
-                                        .set_body(Body::from(body))
-
-                                },
-                                Err(login::LoginEntryError::UsernameExists) =>  add_admin_page(data, req, "This email is associated with another account!"),
-                                Err(e) =>  add_admin_page(data, req, &format!("Something went wrong: ensure that the email is unique: {}", e)),
+                                if data.send_email(
+                                    &addr, 
+                                    "Senior Duke - Welcome & Password Info", 
+                                    "Senior Duke - Welcome & Password Info",
+                                    &subtitle, 
+                                    ""
+                                ).is_none() {
+                                    log::error!("Failed to send email!");
+                                }
                             }
-                        } else {
-                            add_admin_page(
-                                data,
-                                req,
-                                "Invalid teacher details provided!",
-                            )
-                        }
+
+                            let mut attrs: String = String::new();
+
+                            attrs += &data.handlebars.render("user/user_attribute", &json!({
+                                "attribute_name": "Username",
+                                "attribute_value": user.email,
+                            })).unwrap();
+
+                            attrs += "<br><br>";
+                            attrs += &data.handlebars.render("user/user_attribute", &json!({
+                                "attribute_name": "Password",
+                                "attribute_value": password,
+                            })).unwrap();
+
+                            let content = data.handlebars.render("admin/admin_added", &json!({
+                                "back_url": dir::ACCOUNTS_PATH,
+                                "add_admin_url": dir::ADD_ADMIN_PATH,
+                                "attributes": attrs,
+                            })).unwrap();
+
+                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Associate Account Created", dir::APP_NAME.to_owned(), content).unwrap();
+
+                            HttpResponse::new(http::StatusCode::OK)
+                                .set_body(Body::from(body))
+
+                        },
+                        Err(login::LoginEntryError::UsernameExists) =>  add_admin_page(data, req, "This email is associated with another account!"),
+                        Err(e) =>  add_admin_page(data, req, &format!("Something went wrong: ensure that the email is unique: {}", e)),
+                    }
+                }
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }

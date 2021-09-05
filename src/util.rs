@@ -4,6 +4,10 @@ pub fn is_string_server_valid(s: &str) -> bool {
     if s.trim().is_empty() {
         return false;
     }
+    is_optional_string_server_valid(s)
+}
+
+pub fn is_optional_string_server_valid(s: &str) -> bool {
     s.chars().all(|c| c.is_alphanumeric() || c == '@' || c == '.' || c == '-' || c == '_' || c == '!' || c == ' ')
 }
 

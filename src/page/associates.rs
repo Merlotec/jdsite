@@ -250,10 +250,28 @@ pub async fn add_associate_post(
                 if ctx.user.user_agent.can_add_associate(&org_id) {
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
-                            if util::is_string_server_valid(&form.forename)
-                                && util::is_string_server_valid(&form.surname)
-                                && util::is_email_valid(&form.email)
-                            {
+                            if !util::is_string_server_valid(&form.forename) {
+                                add_associate_page(
+                                    data,
+                                    req,
+                                    org_path_str,
+                                    "Invalid teacher forename provided",
+                                )
+                            } else if !util::is_string_server_valid(&form.surname) {
+                                add_associate_page(
+                                    data,
+                                    req,
+                                    org_path_str,
+                                    "Invalid teacher surname provided",
+                                )
+                            } else if !util::is_email_valid(&form.email) {
+                                add_associate_page(
+                                    data,
+                                    req,
+                                    org_path_str,
+                                    "Invalid teacher email provided",
+                                )
+                            } else {
                                 let user: user::User = user::User {
                                     email: form.email.clone(),
                                     forename: form.forename.clone(),
@@ -324,13 +342,6 @@ pub async fn add_associate_post(
                                     Err(login::LoginEntryError::UsernameExists) =>  add_associate_page(data, req, org_path_str, "This email is associated with another account!"),
                                     Err(e) =>  add_associate_page(data, req, org_path_str, &format!("Something went wrong: ensure that the email is unique: {}", e)),
                                 }
-                            } else {
-                                add_associate_page(
-                                    data,
-                                    req,
-                                    org_path_str,
-                                    "Invalid teacher details provided!",
-                                )
                             }
                         }
                         _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
