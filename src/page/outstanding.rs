@@ -57,7 +57,7 @@ pub async fn outstanding_get(data: web::Data<Arc<SharedData>>, req: HttpRequest)
                 let body = page::render_page(
                     Some(ctx),
                     &data,
-                    dir::APP_NAME.to_owned() + " | Outstanding Sections",
+                    dir::APP_NAME.to_owned() + " | Outstanding Achievements",
                     dir::EXTENDED_APP_NAME.to_owned(),
                     content,
                 )
