@@ -112,8 +112,8 @@ pub fn choose_activities_page(
     let body = page::render_page(
         Some(ctx),
         &data,
-        dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard",
-        dir::APP_NAME.to_owned(),
+        dir::APP_NAME.to_owned() + " | Choose Activity - " + &user.name() ,
+        dir::EXTENDED_APP_NAME.to_owned(),
         root,
     )
     .unwrap();
@@ -191,7 +191,7 @@ pub async fn section_page(
                                 if let section::FormEntryData::Text(text) = data {
                                     value = text.clone();
                                 } else {
-                                    println!("Mismatched form data for form: {}", &entry.name);
+                                    log::error!("Mismatched form data for form: {}", &entry.name);
                                 }
                             }
 
@@ -217,7 +217,7 @@ pub async fn section_page(
                                 if let section::FormEntryData::Index(idx) = data {
                                     selected_idx = *idx;
                                 } else {
-                                    println!("Mismatched form data for form: {}", &entry.name);
+                                    log::error!("Mismatched form data for form: {}", &entry.name);
                                 }
                             }
                             let name: String = RADIO_PAT.to_owned() + &entry.name;
@@ -254,7 +254,7 @@ pub async fn section_page(
                                 if let section::FormEntryData::Indices(indices) = data {
                                     selected_indices = indices;
                                 } else {
-                                    println!("Mismatched form data for form: {}", &entry.name);
+                                    log::error!("Mismatched form data for form: {}", &entry.name);
                                 }
                             }
 
@@ -497,8 +497,8 @@ pub async fn section_page(
     let body = page::render_page(
         Some(ctx),
         &data,
-        dir::APP_NAME.to_owned() + " | " + "Pupil Dashboard",
-        dir::APP_NAME.to_owned(),
+        dir::APP_NAME.to_owned() + " | " + &section.name + " - " + &user.name(),
+        dir::EXTENDED_APP_NAME.to_owned(),
         root,
     )
     .unwrap();
@@ -865,7 +865,7 @@ pub async fn upload_section_post(
                                                         if activity.contains_input_component(key) {
                                                             section_instance.input_data.insert(key.to_owned(), FormEntryData::Text(value));
                                                         } else {
-                                                            println!("Unexpected error... The section doesn't contain a text component with the given name {}", key);
+                                                            log::error!("Unexpected error... The section doesn't contain a text component with the given name {}", key);
                                                         }
                                                     } else if let Some(idx) = name.find(RADIO_PAT) {
                                                         let name_idx = idx + RADIO_PAT.len();
@@ -876,10 +876,10 @@ pub async fn upload_section_post(
                                                             if activity.contains_input_component(key) {
                                                                 section_instance.input_data.insert(key.to_string(), FormEntryData::Index(selected_idx));
                                                             } else {
-                                                                println!("Unexpected error... The section doesn't contain a radio button with the given name {}", key);
+                                                                log::error!("Unexpected error... The section doesn't contain a radio button with the given name {}", key);
                                                             }
                                                         } else {
-                                                            println!("Unexpected error... Failed to parse radio button index!");
+                                                            log::error!("Unexpected error... Failed to parse radio button index!");
                                                         }
                                                     } else if let Some(idx) = name.find(CHECK_PAT) {
                                                         let name_idx = idx + CHECK_PAT.len();
@@ -894,11 +894,11 @@ pub async fn upload_section_post(
                                                                     }
                                                                 }
                                                             } else {
-                                                                println!("Unexpected error... The section doesn't contain a checkbox with the given name {}, idx: {}, content: {}", key, idx_str, content_string);
+                                                                log::error!("Unexpected error... The section doesn't contain a checkbox with the given name {}, idx: {}, content: {}", key, idx_str, content_string);
                                                             }
 
                                                         } else {
-                                                            println!("Unexpected error... Failed to parse checkbox button index!");
+                                                            log::error!("Unexpected error... Failed to parse checkbox button index!");
                                                         }
                                                     }
                                                 },
@@ -1121,7 +1121,7 @@ pub async fn set_outstanding_post(
                                                     .outstanding_sections_db
                                                     .insert(&section_id, &())
                                                 {
-                                                    println!(
+                                                    log::error!(
                                                         "Failed to insert to oustanding db: {}",
                                                         e
                                                     );
@@ -1131,7 +1131,7 @@ pub async fn set_outstanding_post(
                                                     .outstanding_sections_db
                                                     .remove_silent(&section_id)
                                                 {
-                                                    println!(
+                                                    log::error!(
                                                         "Failed to remove from oustanding db: {}",
                                                         e
                                                     );

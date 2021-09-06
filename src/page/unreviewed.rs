@@ -107,10 +107,9 @@ pub async fn unreviewed_get(
                                 Some(ctx),
                                 &data,
                                 dir::APP_NAME.to_owned()
-                                    + " | "
-                                    + &org.name
-                                    + " - Unreviewed Sections",
-                                dir::APP_NAME.to_owned(),
+                                    + " | Unreviewed Sections - "
+                                    + &org.name,
+                                dir::EXTENDED_APP_NAME.to_owned(),
                                 org_page,
                             )
                             .unwrap();

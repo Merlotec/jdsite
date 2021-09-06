@@ -96,7 +96,7 @@ pub async fn orgs_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Htt
                     Some(ctx),
                     &data,
                     dir::APP_NAME.to_owned() + " | Organisations",
-                    dir::APP_NAME.to_owned(),
+                    dir::EXTENDED_APP_NAME.to_owned(),
                     org_page,
                 )
                 .unwrap();

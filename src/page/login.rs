@@ -45,7 +45,7 @@ pub fn login_template(ctx: Option<AuthContext>, data: &SharedData, msg: String) 
         ctx,
         &data,
         dir::APP_NAME.to_owned() + " | Login",
-        dir::APP_NAME.to_owned(),
+        dir::EXTENDED_APP_NAME.to_owned(),
         login_body,
     ) {
         Ok(body) => HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body)),
@@ -155,7 +155,7 @@ pub fn change_password_page(
                             ctx,
                             &data,
                             dir::APP_NAME.to_owned() + " | Change Password",
-                            dir::APP_NAME.to_owned(),
+                            dir::EXTENDED_APP_NAME.to_owned(),
                             body,
                         ) {
                             Ok(body) => {
@@ -302,7 +302,7 @@ pub fn create_account_page(
                     ctx,
                     &data,
                     dir::APP_NAME.to_owned() + " | Create Account",
-                    dir::APP_NAME.to_owned(),
+                    dir::EXTENDED_APP_NAME.to_owned(),
                     body,
                 ) {
                     Ok(body) => HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body)),
@@ -428,8 +428,8 @@ pub fn reset_password_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) ->
             let body = page::render_page(
                 ctx,
                 &data,
-                dir::APP_NAME.to_owned() + " | Organisations",
-                dir::APP_NAME.to_owned(),
+                dir::APP_NAME.to_owned() + " | Reset Password",
+                dir::EXTENDED_APP_NAME.to_owned(),
                 page,
             )
             .unwrap();
@@ -476,6 +476,8 @@ pub fn reset_password_post(
                         "",
                     ).is_none() {
                         log::error!("Failed to send email!");
+                    } else {
+                        log::trace!("Reset password email sent!");
                     }
                 }
             }
@@ -488,8 +490,8 @@ pub fn reset_password_post(
             let body = page::render_page(
                 ctx,
                 &data,
-                dir::APP_NAME.to_owned() + " | Organisations",
-                dir::APP_NAME.to_owned(),
+                dir::APP_NAME.to_owned() + " | Reset Password",
+                dir::EXTENDED_APP_NAME.to_owned(),
                 page,
             )
             .unwrap();

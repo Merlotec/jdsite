@@ -8,7 +8,8 @@ pub const LOGIN_REDIRECT_COOKIE: &'static str = "LoginRedirect";
 pub const ASSIGN_ADMIN_LINK_TIMEOUT_SECS: u64 = 60 * 60 * 24 * 5;
 pub const CHANE_PASSWORD_LINK_TIMEOUT_SECS: u64 = 60 * 60 * 24 * 5;
 
-pub const APP_NAME: &'static str = "Senior Duke Portal";
+pub const EXTENDED_APP_NAME: &'static str = "Senior Duke Portal";
+pub const APP_NAME: &'static str = "Senior Duke";
 
 pub const USER_ROOT_PATH: &'static str = "/user";
 

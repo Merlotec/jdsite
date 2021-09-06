@@ -27,8 +27,8 @@ pub async fn help_get(
             let body = page::render_page(
                 ctx,
                 &data,
-                dir::APP_NAME.to_owned() + " | " + "Help",
-                dir::APP_NAME.to_owned(),
+                dir::APP_NAME.to_owned() + " | Help",
+                dir::EXTENDED_APP_NAME.to_owned(),
                 org_page,
             )
             .unwrap();

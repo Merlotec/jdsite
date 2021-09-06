@@ -151,8 +151,8 @@ pub async fn clients_get(
                             let body = page::render_page(
                                 Some(ctx),
                                 &data,
-                                dir::APP_NAME.to_owned() + " | " + &org.name + " - Pupils",
-                                dir::APP_NAME.to_owned(),
+                                dir::APP_NAME.to_owned() + " | Pupils - " + &org.name,
+                                dir::EXTENDED_APP_NAME.to_owned(),
                                 org_page,
                             )
                             .unwrap();
@@ -234,8 +234,8 @@ pub fn add_client_page(
                             let body = page::render_page(
                                 Some(ctx),
                                 &data,
-                                dir::APP_NAME.to_owned() + " | " + &org.name,
-                                dir::APP_NAME.to_owned(),
+                                dir::APP_NAME.to_owned() + " | Add Pupil - " + &org.name,
+                                dir::EXTENDED_APP_NAME.to_owned(),
                                 org_page,
                             )
                             .unwrap();
@@ -388,7 +388,7 @@ pub async fn add_client_post(
                                                 "body": content,
                                             })).unwrap();
                 
-                                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Account Created", dir::APP_NAME.to_owned(), org_page).unwrap();
+                                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Account Created - " + &org.name, dir::EXTENDED_APP_NAME.to_owned(), org_page).unwrap();
                 
                                             HttpResponse::new(http::StatusCode::OK)
                                                 .set_body(Body::from(body))
@@ -553,7 +553,7 @@ pub async fn client_dashboard_get(
                                                 dir::APP_NAME.to_owned()
                                                     + " | "
                                                     + "Pupil Dashboard",
-                                                dir::APP_NAME.to_owned(),
+                                                dir::EXTENDED_APP_NAME.to_owned(),
                                                 root,
                                             )
                                             .unwrap();

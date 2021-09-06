@@ -124,8 +124,8 @@ pub async fn accounts_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, qu
                 let body = page::render_page(
                     Some(ctx),
                     &data,
-                    dir::APP_NAME.to_owned() + " | Outstanding Sections",
-                    dir::APP_NAME.to_owned(),
+                    dir::APP_NAME.to_owned() + " | User Accounts",
+                    dir::EXTENDED_APP_NAME.to_owned(),
                     content,
                 )
                 .unwrap();
@@ -161,7 +161,7 @@ pub fn add_admin_page(
                     Some(ctx),
                     &data,
                     dir::APP_NAME.to_owned() + " | Add Admin Account",
-                    dir::APP_NAME.to_owned(),
+                    dir::EXTENDED_APP_NAME.to_owned(),
                     content,
                 )
                 .unwrap();
@@ -269,7 +269,7 @@ pub async fn add_admin_post(
                                 "attributes": attrs,
                             })).unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Associate Account Created", dir::APP_NAME.to_owned(), content).unwrap();
+                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Associate Account Created", dir::EXTENDED_APP_NAME.to_owned(), content).unwrap();
 
                             HttpResponse::new(http::StatusCode::OK)
                                 .set_body(Body::from(body))

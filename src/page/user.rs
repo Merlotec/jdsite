@@ -135,7 +135,7 @@ pub async fn user_get(
                             Some(ctx),
                             &data,
                             dir::APP_NAME.to_owned() + " | " + &user.name(),
-                            dir::APP_NAME.to_owned(),
+                            dir::EXTENDED_APP_NAME.to_owned(),
                             page_body,
                         )
                         .unwrap();

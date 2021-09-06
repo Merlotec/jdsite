@@ -156,7 +156,7 @@ pub fn not_authorized_page(ctx: Option<AuthContext>, data: &SharedData) -> HttpR
         ctx,
         data,
         dir::APP_NAME.to_owned() + " | Not Authorised",
-        dir::APP_NAME.to_owned(),
+        dir::EXTENDED_APP_NAME.to_owned(),
         page_body,
     )
     .unwrap();

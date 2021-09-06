@@ -117,8 +117,8 @@ pub async fn associates_get(
                             let body = page::render_page(
                                 Some(ctx),
                                 &data,
-                                dir::APP_NAME.to_owned() + " | " + &org.name + " - Teachers",
-                                dir::APP_NAME.to_owned(),
+                                dir::APP_NAME.to_owned() + " | Teachers - " + &org.name,
+                                dir::EXTENDED_APP_NAME.to_owned(),
                                 org_page,
                             )
                             .unwrap();
@@ -196,8 +196,8 @@ pub fn add_associate_page(
                             let body = page::render_page(
                                 Some(ctx),
                                 &data,
-                                dir::APP_NAME.to_owned() + " | " + &org.name,
-                                dir::APP_NAME.to_owned(),
+                                dir::APP_NAME.to_owned() + " | Add Teacher - " + &org.name,
+                                dir::EXTENDED_APP_NAME.to_owned(),
                                 org_page,
                             )
                             .unwrap();
@@ -333,7 +333,7 @@ pub async fn add_associate_post(
                                             "body": content,
                                         })).unwrap();
             
-                                        let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Associate Account Created", dir::APP_NAME.to_owned(), org_page).unwrap();
+                                        let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | Associate Account Created - " + &org.name, dir::EXTENDED_APP_NAME.to_owned(), org_page).unwrap();
             
                                         HttpResponse::new(http::StatusCode::OK)
                                             .set_body(Body::from(body))

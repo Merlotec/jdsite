@@ -1,2 +1,5 @@
 /target
 /root
+log.txt
+cert.pem
+key.pem
