@@ -160,7 +160,7 @@ pub fn add_admin_page(
                 let body = page::render_page(
                     Some(ctx),
                     &data,
-                    dir::APP_NAME.to_owned() + " | Add Admin Account",
+                    dir::APP_NAME.to_owned() + " | Add Admin",
                     dir::EXTENDED_APP_NAME.to_owned(),
                     content,
                 )
@@ -269,7 +269,7 @@ pub async fn add_admin_post(
                                 "attributes": attrs,
                             })).unwrap();
 
-                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Associate Account Created", dir::EXTENDED_APP_NAME.to_owned(), content).unwrap();
+                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Admin Account Created", dir::EXTENDED_APP_NAME.to_owned(), content).unwrap();
 
                             HttpResponse::new(http::StatusCode::OK)
                                 .set_body(Body::from(body))

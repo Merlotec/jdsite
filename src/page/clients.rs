@@ -388,7 +388,7 @@ pub async fn add_client_post(
                                                 "body": content,
                                             })).unwrap();
                 
-                                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Pupil Account Created - " + &org.name, dir::EXTENDED_APP_NAME.to_owned(), org_page).unwrap();
+                                            let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | Pupil Account Created - " + &org.name, dir::EXTENDED_APP_NAME.to_owned(), org_page).unwrap();
                 
                                             HttpResponse::new(http::StatusCode::OK)
                                                 .set_body(Body::from(body))
