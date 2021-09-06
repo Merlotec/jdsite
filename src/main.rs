@@ -89,16 +89,7 @@ async fn main() -> std::io::Result<()> {
     // Spawn notification process using the actix runtime
     actix_web::rt::spawn(notifications::user_notification_process(data.clone()));
 
-    // https
-    let mut https_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-    https_builder
-        .set_private_key_file("key.pem", SslFiletype::PEM)
-        .unwrap();
-    https_builder
-        .set_certificate_chain_file("cert.pem")
-        .unwrap();
-
-    HttpServer::new(move || {
+    let mut builder = HttpServer::new(move || {
         App::new()
             .data(data.clone())
             // Prevent caching of dynamic data.
@@ -164,8 +155,24 @@ async fn main() -> std::io::Result<()> {
             .route("/{filename:.*}", web::get().to(static_file))
         //.service(Files::new("/", "static").index_file("index.html"))
     })
-    .bind("0.0.0.0:80")?
-    .bind_openssl("0.0.0.0:443", https_builder)?
-    .run()
+    .bind("0.0.0.0:80")?;
+
+    // https
+    let mut https_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    if https_builder
+        .set_private_key_file("key.pem", SslFiletype::PEM)
+        .is_ok() {
+        if https_builder
+        .set_certificate_chain_file("cert.pem")
+            .is_ok() {
+            builder = builder.bind_openssl("0.0.0.0:443", https_builder)?;
+        } else {
+            log::warn!("Invalid certificate chain `cert.pem` file - SSL not enabled!");
+        }
+    } else {
+        log::warn!("Invalid private key `key.pem` file - SSL not enabled!");
+    }
+
+    builder.run()
     .await
 }
