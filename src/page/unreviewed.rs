@@ -30,11 +30,11 @@ pub async fn unreviewed_get(
                             let mut rows: String = String::new();
 
                             for section_id in org.unreviewed_sections.iter() {
-                                if let Ok(Some(section)) = data.section_db.fetch(section_id) {
-                                    if let Ok(Some(user)) = data.user_db.fetch(&section.user_id) {
-                                        if let Some(award) = data.awards.get(section.award_index) {
+                                if let Ok(Some(section_instance)) = data.section_db.fetch(section_id) {
+                                    if let Ok(Some(user)) = data.user_db.fetch(&section_instance.user_id) {
+                                        if let Some(award) = data.awards.get(&section_instance.award) {
                                             let date_str: String = {
-                                                if let Some(system_time) = section.state.time() {
+                                                if let Some(system_time) = section_instance.state.time() {
                                                     let datetime: chrono::DateTime<
                                                         chrono::offset::Local,
                                                     > = system_time.into();
@@ -43,18 +43,19 @@ pub async fn unreviewed_get(
                                                     "Error: No date!".to_owned()
                                                 }
                                             };
-
-                                            rows += &data.handlebars.render("sections/section_row", &json!({
-                                                "client_url": dir::client_path(org_id, section.user_id),
-                                                "user_url": dir::user_path(section.user_id),
-                                                "section_url": "/section/".to_owned() + &section_id.to_string(),
-                                                "name": user.name(),
-                                                "email": user.email,
-                                                "award": &award.name,
-                                                "section": &award.sections[section.section_index].name,
-                                                "activity": &award.sections[section.section_index].activities[section.activity_index].name,
-                                                "date": date_str
-                                            })).unwrap();
+                                            if let Some(activity) = section_instance.get_activity(&data) {
+                                                rows += &data.handlebars.render("sections/section_row", &json!({
+                                                    "client_url": dir::client_path(org_id, section_instance.user_id),
+                                                    "user_url": dir::user_path(section_instance.user_id),
+                                                    "section_url": "/section/".to_owned() + &section_id.to_string(),
+                                                    "name": user.name(),
+                                                    "email": user.email,
+                                                    "award": &award.name,
+                                                    "section": &award.sections[section_instance.section_index].name,
+                                                    "activity": &activity.name,
+                                                    "date": date_str
+                                                })).unwrap();
+                                            }
                                         }
                                     }
                                 }

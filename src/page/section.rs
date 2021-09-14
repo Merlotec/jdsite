@@ -41,7 +41,7 @@ pub fn choose_activities_page(
 ) -> HttpResponse {
     let mut activities: String = String::new();
 
-    for (i, activity) in section.activities.iter().enumerate() {
+    for (id, activity) in section.activities.iter() {
         let desc: String = {
             match data.handlebars.render(&activity.activity_url, &()) {
                 Ok(data) => data,
@@ -54,7 +54,7 @@ pub fn choose_activities_page(
             .render(
                 "sections/activity_option",
                 &json!({
-                    "index": i,
+                    "activity": id,
                     "title": &activity.name,
                     "subtitle": &activity.subtitle,
                     "description": desc,
@@ -132,9 +132,8 @@ pub async fn section_page(
     section: &section::SectionInfo,
     section_id: section::SectionKey,
     section_instance: &section::Section,
+    activity: &section::Activity,
 ) -> HttpResponse {
-    let activity = &section.activities[section_instance.activity_index];
-
     let can_edit: bool = {
         if ctx.user_id == user_id {
             if let section::SectionState::Completed = &section_instance.state {
@@ -436,7 +435,7 @@ pub async fn section_page(
                 "section_image_url": section.image_url,
                 "state": section_instance.state.to_string(),
                 "state_class": section_instance.state.css_class(),
-                "activity_name": &activity.name,
+                "activity_name": section.name.clone() + ": " + &activity.name,
                 "activity_subtitle": &activity.subtitle,
                 "activity_description": desc,
                 "show_delete": show_delete,
@@ -502,7 +501,6 @@ pub async fn section_page(
         root,
     )
     .unwrap();
-
     HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
 }
 
@@ -527,16 +525,31 @@ pub async fn section_get(
                                         Ok(Some(org)) => {
                                             if let user::UserAgent::Client {
                                                 sections,
-                                                award_index,
+                                                award,
                                                 ..
                                             } = &user.user_agent
                                             {
-                                                if let Some(award) = data.awards.get(*award_index) {
+                                                if let Some(award) = data.awards.get(award) {
                                                     let section = &award.sections[section_index];
                                                     match sections[section_index] {
                                                         Some(section_id) => {
                                                             match data.section_db.fetch(&section_id) {
-                                                                    Ok(Some(ref section_instance)) => section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance).await,
+                                                                    Ok(Some(ref section_instance)) => {
+                                                                        if let Some(activity) = &section.activities.get(&section_instance.activity) {
+                                                                            section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance, activity).await
+                                                                        } else {
+                                                                            choose_activities_page(
+                                                                                &data,
+                                                                                ctx,
+                                                                                org_id,
+                                                                                &org,
+                                                                                user_id,
+                                                                                &user,
+                                                                                section_index,
+                                                                                &section,
+                                                                            )
+                                                                        }
+                                                                    },
                                                                     Ok(None) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                                                                         .set_body(Body::from("Section doesnt exist!")),
                                                                     Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
@@ -603,7 +616,7 @@ pub async fn section_get(
 
 #[derive(serde::Deserialize)]
 pub struct SelectSectionOptionForm {
-    index: usize,
+    activity: String,
 }
 
 #[post("/org/{org}/client/{user}/section/{section}/select_activity")]
@@ -621,22 +634,22 @@ pub async fn select_activity_post(
                     Ok(Some(ctx)) => {
                         match data.user_db.fetch(&user_id) {
                             Ok(Some(mut user)) => {
-                                if let user::UserAgent::Client { award_index, .. } =
+                                if let user::UserAgent::Client { award: award_id, .. } =
                                     &user.user_agent
                                 {
-                                    if let Some(award) = data.awards.get(*award_index) {
+                                    if let Some(award) = data.awards.get(award_id) {
                                         let section = &award.sections[section_index];
                                         if ctx.user.user_agent.can_view_user(&user.user_agent)
                                             || ctx.user_id == user_id
                                         {
                                             match data.org_db.fetch(&org_id) {
                                                 Ok(Some(_)) => {
-                                                    if form.index < section.activities.len() {
+                                                    if section.activities.contains_key(&form.activity) {
                                                         let section_instance =
                                                             section::Section::new(
                                                                 section_index,
-                                                                *award_index,
-                                                                form.index,
+                                                                award_id.clone(),
+                                                                form.activity.clone(),
                                                                 user_id,
                                                             );
 
@@ -661,7 +674,7 @@ pub async fn select_activity_post(
                                                             http::StatusCode::BAD_REQUEST,
                                                         )
                                                         .set_body(Body::from(
-                                                            "Invalid activity index!",
+                                                            "Invalid activity id!",
                                                         ))
                                                     }
                                                 }
@@ -855,52 +868,55 @@ pub async fn upload_section_post(
                                                     }
                                                 }
                                                 _ => {
-                                                    let activity = &data.awards[section_instance.award_index].sections[section_instance.section_index].activities[section_instance.activity_index];
+                                                    if let Some(activity) = section_instance.get_activity(&data) {
+                                                        if let Some(idx) = name.find(TEXT_PAT) {
+                                                            let name_idx = idx + TEXT_PAT.len();
 
-                                                    if let Some(idx) = name.find(TEXT_PAT) {
-                                                        let name_idx = idx + TEXT_PAT.len();
+                                                            let key: &str = &name[name_idx..];
 
-                                                        let key: &str = &name[name_idx..];
-
-                                                        if activity.contains_input_component(key) {
-                                                            section_instance.input_data.insert(key.to_owned(), FormEntryData::Text(value));
-                                                        } else {
-                                                            log::error!("Unexpected error... The section doesn't contain a text component with the given name {}", key);
-                                                        }
-                                                    } else if let Some(idx) = name.find(RADIO_PAT) {
-                                                        let name_idx = idx + RADIO_PAT.len();
-
-                                                        let key: &str = &name[name_idx..];
-
-                                                        if let Ok(selected_idx) = value.parse::<usize>() {
                                                             if activity.contains_input_component(key) {
-                                                                section_instance.input_data.insert(key.to_string(), FormEntryData::Index(selected_idx));
+                                                                section_instance.input_data.insert(key.to_owned(), FormEntryData::Text(value));
                                                             } else {
-                                                                log::error!("Unexpected error... The section doesn't contain a radio button with the given name {}", key);
+                                                                log::error!("Unexpected error... The section doesn't contain a text component with the given name {}", key);
                                                             }
-                                                        } else {
-                                                            log::error!("Unexpected error... Failed to parse radio button index!");
-                                                        }
-                                                    } else if let Some(idx) = name.find(CHECK_PAT) {
-                                                        let name_idx = idx + CHECK_PAT.len();
-                                                        let content_string: &str = &name[name_idx..];
-                                                        if let Some((idx_str, key)) = content_string.split_once(':') {
-                                                            if activity.contains_input_component(key) {
-                                                                if let Ok(idx) = idx_str.parse::<usize>() {
-                                                                    if let Some(FormEntryData::Indices(ref mut data)) = section_instance.input_data.get_mut(key) {
-                                                                        data.push(idx);
-                                                                    } else {
-                                                                        section_instance.input_data.insert(key.to_string(), FormEntryData::Indices(vec![idx]));
-                                                                    }
+                                                        } else if let Some(idx) = name.find(RADIO_PAT) {
+                                                            let name_idx = idx + RADIO_PAT.len();
+
+                                                            let key: &str = &name[name_idx..];
+
+                                                            if let Ok(selected_idx) = value.parse::<usize>() {
+                                                                if activity.contains_input_component(key) {
+                                                                    section_instance.input_data.insert(key.to_string(), FormEntryData::Index(selected_idx));
+                                                                } else {
+                                                                    log::error!("Unexpected error... The section doesn't contain a radio button with the given name {}", key);
                                                                 }
                                                             } else {
-                                                                log::error!("Unexpected error... The section doesn't contain a checkbox with the given name {}, idx: {}, content: {}", key, idx_str, content_string);
+                                                                log::error!("Unexpected error... Failed to parse radio button index!");
                                                             }
+                                                        } else if let Some(idx) = name.find(CHECK_PAT) {
+                                                            let name_idx = idx + CHECK_PAT.len();
+                                                            let content_string: &str = &name[name_idx..];
+                                                            if let Some((idx_str, key)) = content_string.split_once(':') {
+                                                                if activity.contains_input_component(key) {
+                                                                    if let Ok(idx) = idx_str.parse::<usize>() {
+                                                                        if let Some(FormEntryData::Indices(ref mut data)) = section_instance.input_data.get_mut(key) {
+                                                                            data.push(idx);
+                                                                        } else {
+                                                                            section_instance.input_data.insert(key.to_string(), FormEntryData::Indices(vec![idx]));
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    log::error!("Unexpected error... The section doesn't contain a checkbox with the given name {}, idx: {}, content: {}", key, idx_str, content_string);
+                                                                }
 
-                                                        } else {
-                                                            log::error!("Unexpected error... Failed to parse checkbox button index!");
+                                                            } else {
+                                                                log::error!("Unexpected error... Failed to parse checkbox button index!");
+                                                            }
                                                         }
+                                                    } else {
+                                                        log::error!("Unexpected error... Failed to get activity!");
                                                     }
+                                                    
                                                 },
                                             }
                                         }
@@ -1249,16 +1265,22 @@ pub async fn section_id_get(
                                         Ok(Some(org)) => {
                                             if let user::UserAgent::Client {
                                                 sections,
-                                                award_index,
+                                                award,
                                                 ..
                                             } = &user.user_agent
                                             {
-                                                if let Some(award) = data.awards.get(*award_index) {
+                                                if let Some(award) = data.awards.get(award) {
                                                     let section = &award.sections[section_index];
                                                     match sections[section_index] {
                                                         Some(section_id) => {
                                                             match data.section_db.fetch(&section_id) {
-                                                                    Ok(Some(ref section_instance)) => section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance).await,
+                                                                    Ok(Some(ref section_instance)) => {
+                                                                        if let Some(activity) = &section.activities.get(&section_instance.activity) {
+                                                                            section_page(&data, ctx, org_id, &org, user_id, &user, section_index, &section, section_id, section_instance, activity).await
+                                                                        } else {
+                                                                            page::error_page(Some(ctx), &data, "Activity Does Not Exist", &format!("The section references an activity with id '{}' which does not exist! This could be because the activity was removed.", &section_instance.activity))
+                                                                        }
+                                                                    },
                                                                     Ok(None) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
                                                                         .set_body(Body::from("Section doesnt exist!")),
                                                                     Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)

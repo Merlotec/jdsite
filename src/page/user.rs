@@ -8,7 +8,7 @@ use crate::data::SharedData;
 
 use crate::dir;
 use crate::page;
-
+use crate::db;
 use crate::user;
 
 use actix_web::{get, post};
@@ -218,26 +218,36 @@ pub async fn delete_user_post(
     form: web::Form<DeleteUserForm>,
 ) -> HttpResponse {
     match data.authenticate_context_from_request(&req, true) {
-        Ok(Some(ctx)) => match data.user_db.fetch(&form.user_id) {
-            Ok(Some(target)) => {
-                if ctx.user.user_agent.can_delete_user(&target.user_agent) {
-                    match data.delete_user(&form.user_id) {
-                        Ok(_) => {
-                            let mut r = HttpResponse::SeeOther();
-                            if let Some(referer) = req.headers().get("Referer") {
-                                r.header(http::header::LOCATION, referer.clone());
-                            }
-                            r.body("")
-                        }
-                        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                            .set_body(Body::from(format!("Failed to delete use: {}!", e))),
+        Ok(Some(ctx)) => {
+            match data.user_db.fetch(&form.user_id) {
+                Ok(Some(target)) => {
+                    if !ctx.user.user_agent.can_delete_user(&target.user_agent) {
+                        return page::not_authorized_page(Some(ctx), &data);
                     }
-                } else {
-                    page::not_authorized_page(Some(ctx), &data)
                 }
+                Err(db::Error::DeserializeError(_)) => {
+                    if !ctx.user.user_agent.can_delete_invalid_users() {
+                        return page::not_authorized_page(Some(ctx), &data)
+                    }
+                },
+                Ok(None) => return HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                    .set_body(Body::from("Failed to get user!")),
+                _ => return HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .set_body(Body::from("Error fetching user!")),
+            };
+            // delete
+
+            match data.delete_user(&form.user_id) {
+                true => {
+                    let mut r = HttpResponse::SeeOther();
+                    if let Some(referer) = req.headers().get("Referer") {
+                        r.header(http::header::LOCATION, referer.clone());
+                    }
+                    r.body("")
+                }
+                false => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .set_body(Body::from(format!("Failed to delete user!"))),
             }
-            _ => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
-                .set_body(Body::from("Failed to get user!")),
         },
         Ok(None) => page::redirect_to_login(&req),
 

@@ -212,15 +212,15 @@ pub async fn assign_admin_post(
                         let link: String = dir::make_absolute_url(&("/user/create_account/".to_string() + &link_token.to_string()));
                         let addr: String = form.email.clone();
 
-                        let subtitle = "<a href=\"".to_owned()
+                        let subtitle = "You have been invited to create a Senior Duke organisation administrator account. <br><a href=\"".to_owned()
                             + &link
                             + "\">"
-                            + "Click here</a> to create your organisation account.";
+                            + "Click here</a> to create your organisation administrator account.";
 
                         if data.send_email(
                             &addr,
                             "Senior Duke - Create Your Account",
-                            "Create Organisation Account",
+                            "Create Organisation Administrator Account",
                             &subtitle,
                             "",
                         ).is_none() {

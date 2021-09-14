@@ -36,7 +36,8 @@ pub fn render_page(
         nav_string += &data.handlebars.render("shared/nav_item", &nav_map)?;
     }
 
-    let (user_string, user_class, user_link, auth_link, auth_action): (
+    let (user_string, homepage_url, user_class, user_link, auth_link, auth_action): (
+        String,
         String,
         String,
         String,
@@ -46,6 +47,7 @@ pub fn render_page(
         match ctx {
             Some(ctx) => (
                 ctx.user.forename.to_owned() + " " + &ctx.user.surname,
+                ctx.user.user_agent.root_page(ctx.user_id),
                 "user-string".to_owned(),
                 dir::user_path(ctx.user_id),
                 dir::LOGOUT_PATH.to_owned(),
@@ -53,6 +55,7 @@ pub fn render_page(
             ),
             None => (
                 "Not Logged In".to_owned(),
+                "/login".to_string(),
                 "no-user-string".to_owned(),
                 "".to_owned(),
                 dir::LOGIN_PAGE.to_owned(),
@@ -65,6 +68,7 @@ pub fn render_page(
         "shared/page",
         &json!({
             "page_title": title,
+            "homepage_url": homepage_url,
             "page_heading": heading,
             "page_user": user_string,
             "page_user_link": user_link,
@@ -147,9 +151,16 @@ pub fn path_header(
 }
 
 pub fn not_authorized_page(ctx: Option<AuthContext>, data: &SharedData) -> HttpResponse {
+    error_page(ctx, data, "Not Authorised", "You are not authorised to access this page!")
+}
+
+pub fn error_page(ctx: Option<AuthContext>, data: &SharedData, title: &str, text: &str) -> HttpResponse {
     let page_body: String = data
         .handlebars
-        .render("shared/not_authorized", &())
+        .render("shared/error_page", &json!({
+            "title": title,
+            "text": text,
+        }))
         .unwrap();
 
     let body = render_page(

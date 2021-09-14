@@ -33,10 +33,15 @@ pub async fn accounts_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, qu
                 let mut rows: String = String::new();
 
                 let mut unordered_users: Vec<(user::UserKey, user::User)> = Vec::new();
-
+                let mut invalid_users: Vec<user::UserKey> = Vec::new();
                 if view_all {
-                    data.user_db.for_each(|user_id, user| {
-                        unordered_users.push((*user_id, user));
+                    data.user_db.for_each_key(|user_id, user| {
+                        if let Some(user) = user {
+                            unordered_users.push((*user_id, user));
+                        } else {
+                            invalid_users.push(*user_id);
+                        }
+                        
                     });
                 } else if let Some(search) = &query.search {
                     if !search.trim().is_empty() {
@@ -102,6 +107,17 @@ pub async fn accounts_get(data: web::Data<Arc<SharedData>>, req: HttpRequest, qu
                         "role": role,
                         "email": user.email,
                         "delete_user_hidden": delete_user_hidden,
+                    })).unwrap();
+                }
+
+                for user_id in invalid_users {
+                    rows += &data.handlebars.render("admin/account_row", &json!({
+                        "user_id": user_id.to_string(),
+                        "name": "Invalid User",
+                        "role": "N/A",
+                        "email": "N/A",
+                        "delete_user_hidden": "",
+                        "invalid": true,
                     })).unwrap();
                 }
 
@@ -237,8 +253,20 @@ pub async fn add_admin_post(
                                 // send email.
                                 let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
                                 let addr: String = form.email.clone();
-                                let subtitle: String = "You have successfully been registered for a Senior Duke admin account! ".to_owned() + "<a href=\"" + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
         
+                                let subtitle: String = data
+                                .handlebars
+                                .render(
+                                    "email/account_created",
+                                    &json!({
+                                        "name": user.name(),
+                                        "account_type": "global administrator",
+                                        "username": &user.email,
+                                        "password": &password,
+                                        "link": link,
+                                    }),
+                                )
+                                .unwrap();
                                 if data.send_email(
                                     &addr, 
                                     "Senior Duke - Welcome & Password Info", 

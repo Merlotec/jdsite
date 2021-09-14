@@ -1396,6 +1396,7 @@ dependencies = [
  "lettre",
  "lettre_email",
  "log",
+ "maplit",
  "mime",
  "openssl",
  "rand 0.8.4",

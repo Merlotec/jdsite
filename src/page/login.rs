@@ -386,8 +386,31 @@ pub async fn create_account_post(
 
                                 match data.register_user(&user, &form.password, false) {
                                     Ok(_) => {
-                                        // Got user
+                                        // Got user - remove link.
                                         let _ = data.link_manager.db().remove_silent(&token);
+
+                                        // Send welcome email
+                                        let subtitle: String = data
+                                        .handlebars
+                                        .render(
+                                            "email/account_created",
+                                            &json!({
+                                                "name": user.name(),
+                                                "account_type": user.user_agent.lower_string(),
+                                                "username": &user.email,
+                                            }),
+                                        )
+                                        .unwrap();
+                                        if data.send_email(
+                                            &form.email, 
+                                            "Senior Duke - Welcome & Password Info", 
+                                            "Senior Duke - Welcome & Password Info",
+                                            &subtitle, 
+                                            ""
+                                        ).is_none() {
+                                            log::error!("Failed to send email!");
+                                        }
+
                                         let mut r = HttpResponse::SeeOther();
                                         if let Some(existing) = req.cookie(dir::AUTH_COOKIE) {
                                             r.del_cookie(&existing);

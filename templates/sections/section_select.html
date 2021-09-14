@@ -1,22 +1,22 @@
 <script>
-    function activityOptionSelected(index, title) {
+    function activityOptionSelected(newOpt, title) {
         
 
-        var indexInput = document.getElementById('selectOptionIndex');
-        var oldIndex = indexInput.value;
-        indexInput.value = index;
+        var activityInput = document.getElementById('selectOptionActivity');
+        var oldOpt = activityInput.value;
+        activityInput.value = newOpt;
 
         var titleText = document.getElementById('selectOptionText');
         titleText.innerHTML = 'Do you want to proceed with the challenge <b>' + title + '</b>?';
         titleText.className = "white";
 
         // Clear old selections.
-        let oldDiv = document.getElementById('activityOption' + oldIndex);
+        let oldDiv = document.getElementById('activityOption_' + oldOpt);
         if (oldDiv != null) {
             oldDiv.className = "activity-option";
         }
 
-        var optionDiv = document.getElementById('activityOption' + index);
+        var optionDiv = document.getElementById('activityOption_' + newOpt);
         optionDiv.className = "activity-option activity-option-selected";
 
         var button = document.getElementById('selectOptionSubmit');
@@ -50,8 +50,8 @@
     
     <form style="text-align: center; width: 70%; margin: auto; float: center;" method="POST" action="{{select_activity_url}}">
         <h4 id="selectOptionText" style="text-align: center; display: block; height: 70px; width: 100%;">You must click on a challenge in order to select it</h4>
-        <input id="selectOptionIndex" name="index" class="input-box" type="hidden" placeholder="Class"></input>
-        <input id="selectOptionSubmit" style="margin: auto;" class="submit-button-disabled" type="submit" value="Select Challenge"/>
+        <input id="selectOptionActivity" name="activity" type="hidden"></input>
+        <input id="selectOptionSubmit" style="margin: auto;" class="submit-button-disabled" type="submit" value="Select Challenge" disabled/>
     </form>
     <br><br><br><br><br>
 </div>

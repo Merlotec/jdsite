@@ -59,6 +59,10 @@ b {
     font-weight: bold;
 }
 
+.page-heading {
+    color: white;
+}
+
 .menu {
     background-color: rgb(66, 65, 78);
     display: inline-block;
@@ -322,6 +326,12 @@ b {
     font-size: 17px;
 }
 
+.completed-row {
+    background-color: rgb(60, 71, 66);
+    text-align: left;
+    font-size: 17px;
+}
+
 .table-content {
     display: inline-block;
     float: center;
@@ -335,6 +345,10 @@ b {
 
 .selectable-row:hover {
     background-color: rgb(66, 65, 78);
+}
+
+.completed-row:hover {
+    background-color: rgb(65, 78, 72);
 }
 
 .add-button {
@@ -922,4 +936,9 @@ b {
     margin: auto;
     margin-top: 20px;
     margin-bottom: -20px;
+}
+
+.bold-title {
+    color: white;
+    font-weight: bold;
 }

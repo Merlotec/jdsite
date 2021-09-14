@@ -56,7 +56,7 @@ pub enum UserAgent {
     Client {
         org_id: OrgKey,
         class: String,
-        award_index: usize,
+        award: String,
         sections: [Option<SectionKey>; 6],
     },
 }
@@ -95,6 +95,24 @@ impl UserAgent {
             UserAgent::Organisation(_) => Privilege::OrgLevel,
             UserAgent::Associate(_) => Privilege::OrgLevel,
             UserAgent::Client { .. } => Privilege::ClientLevel,
+        }
+    }
+
+    pub fn lower_string(&self) -> String {
+        match self {
+            UserAgent::Owner => "owner".to_owned(),
+            UserAgent::Admin => "admin".to_owned(),
+            UserAgent::Organisation(_) => "organisation administrator".to_owned(),
+            UserAgent::Associate(_) => "teacher".to_owned(),
+            UserAgent::Client { .. } => "pupil".to_owned(),
+        }
+    }
+
+    pub fn can_delete_invalid_users(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            _ => false,
         }
     }
 

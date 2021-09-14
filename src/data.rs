@@ -7,6 +7,7 @@ use serde_json::json;
 use std::str::FromStr;
 use std::sync::Mutex;
 use std::time::Duration;
+use std::collections::HashMap;
 use user::{User, UserAgent, UserKey};
 
 pub struct SharedData {
@@ -21,7 +22,7 @@ pub struct SharedData {
     pub noreply_addr: String,
     pub mailer: Mutex<SmtpTransport>,
 
-    pub awards: Vec<section::AwardInfo>,
+    pub awards: HashMap<String, section::AwardInfo>,
 
     pub link_manager: link::LinkManager,
 
@@ -150,7 +151,7 @@ impl SharedData {
                                                     if let Err(e) =
                                                         self.org_db.insert(&org_id, &org)
                                                     {
-                                                        println!("Failed to update org db for new client! {}", e);
+                                                        log::error!("Failed to update org db for new client! {}", e);
                                                     }
                                                 }
                                             }
@@ -162,7 +163,7 @@ impl SharedData {
                                                     if let Err(e) =
                                                         self.org_db.insert(&org_id, &org)
                                                     {
-                                                        println!("Failed to update org db for new associate! {}", e);
+                                                        log::error!("Failed to update org db for new associate! {}", e);
                                                     }
                                                 }
                                             }
@@ -174,7 +175,7 @@ impl SharedData {
                                                     if let Err(e) =
                                                         self.org_db.insert(&org_id, &org)
                                                     {
-                                                        println!("Failed to update org db for new org admin! {}", e);
+                                                        log::error!("Failed to update org db for new org admin! {}", e);
                                                     }
                                                 } else {
                                                     let _ = self.user_db.remove_silent(&user_id);
@@ -212,7 +213,7 @@ impl SharedData {
         match self.user_db.remove(user_id) {
             Ok(Some(user)) => {
                 if let Err(e) = self.login_db.db().remove_silent(&user.email) {
-                    println!("Failed to delete login entry! {}", e);
+                    log::error!("Failed to delete login entry! {}", e);
                 }
                 Ok(Some(user))
             }
@@ -221,56 +222,90 @@ impl SharedData {
         }
     }
 
-    pub fn delete_user(&self, user_id: &UserKey) -> Result<(), db::Error> {
-        let user = self.delete_user_entry(user_id)?;
-        if let Some(user) = user {
-            match user.user_agent {
-                UserAgent::Client { org_id, .. } => {
-                    if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                        org.clients.retain(|x| x != user_id);
-                        org.credits += 1;
-                        if let Err(e) = self.org_db.insert(&org_id, &org) {
-                            println!("Failed to update org db for new client! {}", e);
-                        }
-                    }
-                }
-                UserAgent::Associate(org_id) => {
-                    if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                        org.associates.retain(|x| x != user_id);
-                        if let Err(e) = self.org_db.insert(&org_id, &org) {
-                            println!("Failed to update org db for new associate! {}", e);
-                        }
-                    }
-                }
-                UserAgent::Organisation(org_id) => {
-                    if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
-                        if org.admin == Some(*user_id) {
-                            org.admin = None;
+    /// Deletes user even if invalid by searching login database.
+    /// Returns true if the user existed and was removed.
+    pub fn delete_user(&self, user_id: &UserKey) -> bool {
+        match self.delete_user_entry(user_id) {
+            Ok(Some(user)) => {
+                match user.user_agent {
+                    UserAgent::Client { org_id, .. } => {
+                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                            org.clients.retain(|x| x != user_id);
+                            org.credits += 1;
                             if let Err(e) = self.org_db.insert(&org_id, &org) {
-                                println!("Failed to update org db for new associate! {}", e);
+                                log::error!("Failed to update org db for new client! {}", e);
                             }
                         }
                     }
+                    UserAgent::Associate(org_id) => {
+                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                            org.associates.retain(|x| x != user_id);
+                            if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                log::error!("Failed to update org db for new associate! {}", e);
+                            }
+                        }
+                    }
+                    UserAgent::Organisation(org_id) => {
+                        if let Ok(Some(mut org)) = self.org_db.fetch(&org_id) {
+                            if org.admin == Some(*user_id) {
+                                org.admin = None;
+                                if let Err(e) = self.org_db.insert(&org_id, &org) {
+                                    log::error!("Failed to update org db for new associate! {}", e);
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
-        }
+                true
+            },
+            Ok(None) => false,
+            // Data is bad but user exists:
+            Err(db::Error::DeserializeError(_)) => {
+                // Try to find login entry by iterating login db (SLOW)
+                self.login_db.db().retain(false, |v| {
+                    if &v.user_id == user_id {
+                        false
+                    } else {
+                        true
+                    }
+                });
 
-        Ok(())
+                self.org_db.for_each(|org_id, mut org| {
+                    let mut changed = false;
+                    if org.admin == Some(*user_id) {
+                        org.admin = None;
+                        changed = true;
+                    } else if let Some(idx) = org.clients.iter().position(|v| v == user_id) {
+                        org.clients.remove(idx);
+                        org.credits += 1;
+                        changed = true;
+                    } else if let Some(idx) = org.associates.iter().position(|v| v == user_id) {
+                        org.associates.remove(idx);
+                        changed = true;
+                    }
+                    if changed {
+                        let _ = self.org_db.insert(org_id, &org);
+                    }
+                });
+                true
+            },
+            Err(_) => false,
+        }
     }
 
     pub fn delete_org(&self, org_id: &org::OrgKey) -> Result<(), db::Error> {
         match self.org_db.remove(org_id) {
             Ok(Some(org)) => {
                 for user_id in org.clients {
-                    if let Err(e) = self.delete_user(&user_id) {
-                        println!("Failed to delete client {}: {}", user_id.to_string(), e);
+                    if self.delete_user(&user_id) == false {
+                        log::error!("Failed to delete client {}", user_id.to_string());
                     }
                 }
 
                 for user_id in org.associates {
-                    if let Err(e) = self.delete_user(&user_id) {
-                        println!("Failed to delete associate {}: {}", user_id.to_string(), e);
+                    if self.delete_user(&user_id) == false {
+                        log::error!("Failed to delete associate {}", user_id.to_string());
                     }
                 }
                 Ok(())
@@ -351,7 +386,7 @@ impl SharedData {
 
                             if len != org.unreviewed_sections.len() {
                                 if let Err(e) = self.org_db.insert(&org_id, &org) {
-                                    println!("Failed to update org: {}", e);
+                                    log::error!("Failed to update org: {}", e);
                                 }
                             }
                         }
@@ -359,7 +394,7 @@ impl SharedData {
 
                     if changed {
                         if let Err(e) = self.user_db.insert(&section.user_id, &client) {
-                            println!("Failed to update client: {}", e);
+                            log::error!("Failed to update client: {}", e);
                         }
                     }
                 }

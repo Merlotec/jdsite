@@ -1,0 +1,18 @@
+Hi {{name}}, you have successfully been registered for a Senior Duke {{account_type}} account
+{{#if org_name}}
+    as part of the organisation '{{org_name}}'
+{{/if}}
+.
+<br>
+Your user name is 
+<b style="font-family: 'Courier New', Courier, monospace;">{{username}}</b> 
+{{#if password}}
+    and your default password is: 
+    <b style="font-family: 'Courier New', Courier, monospace;">{{password}}</b>
+{{/if}}
+<br>
+You can login <a href="https://seniorportal.juniorduke.com/login">here</a>
+{{#if link}}
+    or change your password by clicking <a href="{{link}}">here</a>
+{{/if}}
+.

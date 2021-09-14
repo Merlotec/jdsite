@@ -195,13 +195,34 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
     {
         for item in self.db.iter() {
             if let Ok((key, bytes)) = item {
-                match bincode::deserialize(&bytes) {
-                    Ok(v) => match OwnedKey::try_from(key) {
-                        Ok(k) => f(&k, v),
+                match OwnedKey::try_from(key) {
+                    Ok(k) => match bincode::deserialize(&bytes) {
+                        Ok(v) => f(&k, v),
                         Err(_) => {}
                     },
                     Err(_) => {}
                 }
+                
+            }
+        }
+    }
+
+    pub fn for_each_key<F, OwnedKey>(&self, mut f: F) 
+    where
+        K: ToOwned<Owned = OwnedKey>,
+        OwnedKey: TryFrom<sled::IVec> + Sized,
+        F: FnMut(&OwnedKey, Option<V>),
+    {
+        for item in self.db.iter() {
+            if let Ok((key, bytes)) = item {
+                match OwnedKey::try_from(key) {
+                    Ok(k) => match bincode::deserialize(&bytes) {
+                        Ok(v) => f(&k, Some(v)),
+                        Err(_) => f(&k, None),
+                    },
+                    Err(_) => {}
+                }
+                
             }
         }
     }

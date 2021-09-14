@@ -39,21 +39,23 @@ pub async fn clients_get(
                                         if let user::UserAgent::Client {
                                             org_id: client_org_id,
                                             class,
-                                            award_index,
+                                            award,
                                             sections,
                                         } = &user.user_agent
                                         {
                                             if client_org_id == &org_id {
-                                                if let Some(award) = data.awards.get(*award_index) {
+                                                if let Some(award) = data.awards.get(award) {
                                                     // Get section info
                                                     let mut unreviewed: u32 = 0;
-                                                    //let mut completed: u32 = 0;
+                                                    let mut completed_count: usize = 0;
 
                                                     let section_styles: Vec<String> = sections.iter().map(|x| {
                                                         if let Some(section_id) = x {
                                                             if let Ok(Some(section)) = data.section_db.fetch(&section_id) {
                                                                 if let section::SectionState::InReview(_) = section.state {
                                                                     unreviewed += 1;
+                                                                } else if let section::SectionState::Completed = section.state {
+                                                                    completed_count += 1;
                                                                 }
                                                                 let border: &str = {
                                                                     if section.outstanding {
@@ -71,6 +73,8 @@ pub async fn clients_get(
                                                         }
                                                     }).collect();
 
+                                                    let completed: bool = completed_count == sections.len();
+
                                                     rows += &data.handlebars.render("client/client_row", &json!({
                                                         "client_url": dir::client_path(org_id, *user_id),
                                                         "user_url": dir::user_path(*user_id),
@@ -81,9 +85,10 @@ pub async fn clients_get(
                                                         "award": &award.short_name,
                                                         "section_styles": section_styles,
                                                         "unreviewed_sections": unreviewed.to_string(),
+                                                        "completed": completed,
                                                     })).unwrap();
                                                 } else {
-                                                    log::error!("[clients_get] Error - no award for index: {}", award_index);
+                                                    log::error!("[clients_get] Error - no award for id: {}", award);
                                                 }
                                             }
                                         }
@@ -188,8 +193,13 @@ pub fn add_client_page(
                 if ctx.user.user_agent.can_view_org(&org_id) {
                     match data.org_db.fetch(&org_id) {
                         Ok(Some(org)) => {
-                            let awards: Vec<String> =
-                                data.awards.iter().map(|x| x.name.clone()).collect();
+                            let awards: Vec<_> =
+                                data.awards.iter().map(|(id, x)| { 
+                                    json!({
+                                        "title": x.name.clone(),
+                                        "award": id,
+                                    })
+                                }).collect();
 
                             let content = data.handlebars.render("client/add_client", &json!({
                                 "back_url": dir::org_path(org_id) + dir::CLIENTS_PAGE,
@@ -274,7 +284,7 @@ pub struct AddClientForm {
     surname: String,
     email: String,
     class: String,
-    award_index: usize,
+    award: String,
 }
 
 #[post("/org/{org}/add_client")]
@@ -321,6 +331,14 @@ pub async fn add_client_post(
                                         "Invalid class name provided",
                                     )
                                 } else {
+                                    if !data.awards.contains_key(&form.award) {
+                                        return add_client_page(
+                                            data,
+                                            req,
+                                            org_path_str,
+                                            "Invalid award provided",
+                                        );
+                                    }
                                     let user: user::User = user::User {
                                         email: form.email.clone(),
                                         forename: form.forename.clone(),
@@ -329,7 +347,7 @@ pub async fn add_client_post(
                                         user_agent: user::UserAgent::Client {
                                             org_id,
                                             class: form.class.clone(),
-                                            award_index: form.award_index,
+                                            award: form.award.clone(),
                                             sections: [None; 6],
                                         },
                                     };
@@ -342,9 +360,22 @@ pub async fn add_client_post(
                                                 // send email.
                                                 let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
                                                 let addr: String = form.email.clone();
-                        
-                                                let subtitle: String = "You have successfully been signed up to Senior Duke! <a href=\"".to_owned() + &link + "\">" + "Click here</a> to change your account password. Your default password is: " + &password;
-                        
+                                                
+                                                let subtitle: String = data
+                                                .handlebars
+                                                .render(
+                                                    "email/account_created",
+                                                    &json!({
+                                                        "name": user.name(),
+                                                        "account_type": "pupil",
+                                                        "org_name": &org.name,
+                                                        "username": &user.email,
+                                                        "password": &password,
+                                                        "link": link,
+                                                    }),
+                                                )
+                                            .unwrap();
+
                                                 if data.send_email(
                                                     &addr, 
                                                     "Senior Duke - Welcome & Password Info", 
@@ -431,7 +462,7 @@ pub async fn client_dashboard_get(
                 Ok(Some(ctx)) => match data.user_db.fetch(&user_id) {
                     Ok(Some(user)) => {
                         if let user::UserAgent::Client {
-                            award_index,
+                            award,
                             sections,
                             ..
                         } = &user.user_agent
@@ -441,13 +472,17 @@ pub async fn client_dashboard_get(
                             {
                                 match data.org_db.fetch(&org_id) {
                                     Ok(Some(org)) => {
-                                        if let Some(award) = data.awards.get(*award_index) {
+                                        if let Some(award) = data.awards.get(award) {
                                             let mut sections_body: String = String::new();
-
+                                            let mut completed_count: usize = 0;
                                             for (i, section) in award.sections.iter().enumerate() {
                                                 let (activity_title, activity_title_class, state, state_class): (String, String, String, String) = {
                                                         if let Some(section_id) = sections[i] {
                                                             if let Ok(Some(section_instance)) = data.section_db.fetch(&section_id) {
+                                                                if section_instance.state.is_completed() {
+                                                                    completed_count += 1;
+                                                                }
+
                                                                 let outstanding: &str = {
                                                                     if section_instance.outstanding {
                                                                         " - <span style=\"color: pink;\">Outstanding</span>"
@@ -455,13 +490,21 @@ pub async fn client_dashboard_get(
                                                                         ""
                                                                     }
                                                                 };
-
-                                                                (
-                                                                section.activities[section_instance.activity_index].name.clone(), 
-                                                                    "activity-chosen".to_owned(),
-                                                                    section_instance.state.to_string() + outstanding,
-                                                                    section_instance.state.css_class(),
-                                                                )
+                                                                if let Some(activity) = section.activities.get(&section_instance.activity) {
+                                                                    (
+                                                                        activity.name.clone(), 
+                                                                        "activity-chosen".to_owned(),
+                                                                        section_instance.state.to_string() + outstanding,
+                                                                        section_instance.state.css_class(),
+                                                                    )
+                                                                } else {
+                                                                    (
+                                                                        "Click to Select Challenge".to_owned(), 
+                                                                        "activity-not-chosen".to_owned(),
+                                                                        "Invalid Activity".to_owned(),
+                                                                        String::new(),
+                                                                    )
+                                                                }
                                                             } else {
                                                                 (
                                                                     "ERROR".to_owned(), 
@@ -491,6 +534,8 @@ pub async fn client_dashboard_get(
                                                     })).unwrap();
                                             }
 
+                                            let completed = completed_count == award.sections.len();
+
                                             let body: String = data
                                                 .handlebars
                                                 .render(
@@ -499,6 +544,7 @@ pub async fn client_dashboard_get(
                                                         "award_icon": &award.image_url,
                                                         "award": &award.name,
                                                         "sections": sections_body,
+                                                        "completed": completed,
                                                     }),
                                                 )
                                                 .unwrap();

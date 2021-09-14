@@ -288,7 +288,20 @@ pub async fn add_associate_post(
                                             // send email.
                                             let link: String = dir::make_absolute_url(&("/user/change_password/".to_string() + &link_token.to_string()));
                                             let addr: String = form.email.clone();
-                                            let subtitle: String = "<a href=\"".to_owned() + &link + "\">" + "You have successfully been registered for a teacher account for " + &org.name + "! Click here</a> to change your account password. Your default password is: " + &password;
+                                            let subtitle: String = data
+                                            .handlebars
+                                            .render(
+                                                "email/account_created",
+                                                &json!({
+                                                    "name": user.name(),
+                                                    "account_type": "teacher",
+                                                    "org_name": &org.name,
+                                                    "username": &user.email,
+                                                    "password": &password,
+                                                    "link": link,
+                                                }),
+                                            )
+                                            .unwrap();
                     
                                             if data.send_email(
                                                 &addr, 
