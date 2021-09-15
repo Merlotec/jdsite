@@ -420,6 +420,12 @@ impl SectionInfo {
                         activity_url: "sections/gold/money/live_for_less".to_owned(),
                         components: Vec::new(),
                     },
+                    "saving".to_owned() => Activity {
+                        name: "Saving".to_owned(),
+                        subtitle: "Communication, Cooperation, Time Management".to_owned(),
+                        activity_url: "sections/gold/money/saving".to_owned(),
+                        components: Vec::new(),
+                    },
                 ],
             },
             SectionInfo {
