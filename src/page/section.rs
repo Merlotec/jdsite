@@ -302,22 +302,27 @@ pub async fn section_page(
             has_assets = true;
             let p = path.unwrap();
             let filename = p.file_name().to_owned().into_string().unwrap();
-            let url = "/section/".to_owned() + &section_id.to_string() + "/asset/" + &filename;
-            let ext: String = p.path().extension().to_lower();
+            let download_url = "/section/".to_owned() + &section_id.to_string() + "/asset/" + &filename + "/download";
+            let view_url = "/section/".to_owned() + &section_id.to_string() + "/asset/" + &filename + "/view";
             let media: String = {
-                if ext == Some(std::ffi::OsStr::new("png"))
-                    || ext == Some(std::ffi::OsStr::new("jpg"))
-                    || ext == Some(std::ffi::OsStr::new("jpeg"))
-                    || ext == Some(std::ffi::OsStr::new("pdf"))
-                {
-                    data.handlebars
-                        .render(
-                            "sections/image_asset",
-                            &json!({
-                                "asset_url": &url,
-                            }),
-                        )
-                        .unwrap()
+                if let Some(os_ext) = p.path().extension() {
+                    if let Some(ext_raw) = os_ext.to_str() {
+                        let ext: String = ext_raw.to_string().to_lowercase();
+                        if ext == "png" || ext == "jpg" || ext == "jpeg" {
+                            data.handlebars
+                                .render(
+                                    "sections/image_asset",
+                                    &json!({
+                                        "asset_url": &view_url,
+                                    }),
+                                )
+                                .unwrap()
+                        } else {
+                            String::new()
+                        }
+                    } else {
+                        String::new()
+                    }
                 } else {
                     String::new()
                 }
@@ -329,7 +334,8 @@ pub async fn section_page(
                         "sections/file_bubble",
                         &json!({
                             "filename": &filename,
-                            "download_url": url,
+                            "view_url": view_url,
+                            "download_url": download_url,
                             "media": media,
                         }),
                     )
@@ -341,7 +347,8 @@ pub async fn section_page(
                         "sections/readonly_file_bubble",
                         &json!({
                             "filename": &filename,
-                            "download_url": url,
+                            "view_url": view_url,
+                            "download_url": download_url,
                             "media": media,
                         }),
                     )
@@ -1194,11 +1201,11 @@ pub async fn set_outstanding_post(
     }
 }
 
-#[get("/section/{section}/asset/{asset}")]
+#[get("/section/{section}/asset/{asset}/{action}")]
 pub async fn asset_get(
     data: web::Data<Arc<SharedData>>,
     req: HttpRequest,
-    path: web::Path<(String, String)>,
+    path: web::Path<(String, String, Option<String>)>,
 ) -> HttpResponse {
     if let Ok(section_id) = section::SectionKey::from_str(&(path.0).0) {
         // iterate over multipart stream
@@ -1209,14 +1216,27 @@ pub async fn asset_get(
                         if ctx.user.user_agent.can_view_user(&user.user_agent)
                             || ctx.user_id == section_instance.user_id
                         {
-                            let filename = (path.0).1;
+                            let filename = (path.0).1.clone();
                             let filepath = data.path_for_asset(&section_id, &filename);
-                            if let Ok(file) = web::block(|| NamedFile::open(filepath)).await {
-                                file.into_response(&req).unwrap()
+                            if path.2 == Some("download".to_owned()) || path.2 == None {
+                                if let Ok(file) = web::block(|| NamedFile::open(filepath)).await {
+                                    file.into_response(&req).unwrap()
+                                } else {
+                                    HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                                        .set_body(Body::from("Asset not found!"))
+                                }
+                            } else if path.2 == Some("view".to_owned()) {
+                                match async_std::fs::read(filepath).await {
+                                    Ok(data) => HttpResponse::new(http::StatusCode::OK)
+                                        .set_body(Body::from(data)),
+                                    Err(e) => HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                                        .set_body(Body::from(format!("Asset fetch failed: {}", e))),
+                                }
                             } else {
                                 HttpResponse::new(http::StatusCode::BAD_REQUEST)
-                                    .set_body(Body::from("Asset not found!"))
+                                        .set_body(Body::from("Bad action!"))
                             }
+                            
                         } else {
                             page::not_authorized_page(Some(ctx), &data)
                         }

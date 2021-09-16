@@ -1,5 +1,6 @@
 /target
 /root
+/Cargo.lock
 /log.txt
 /cert.pem
 /key.pem
