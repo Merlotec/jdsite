@@ -363,6 +363,12 @@ impl SharedData {
     pub fn delete_section(&self, section_id: &section::SectionKey) -> Result<(), db::Error> {
         match self.section_db.remove(section_id) {
             Ok(Some(section)) => {
+                // Delete assets of section
+                let path = self.section_path(section_id);
+                if let Err(e) = std::fs::remove_dir_all(path) {
+                    log::error!("Failed to remove assets dir: {}", e);
+                }
+
                 let _ = self.outstanding_sections_db.remove_silent(section_id);
 
                 if let Ok(Some(mut client)) = self.user_db.fetch(&section.user_id) {
