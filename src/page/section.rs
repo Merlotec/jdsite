@@ -303,10 +303,12 @@ pub async fn section_page(
             let p = path.unwrap();
             let filename = p.file_name().to_owned().into_string().unwrap();
             let url = "/section/".to_owned() + &section_id.to_string() + "/asset/" + &filename;
+            let ext: String = p.path().extension().to_lower();
             let media: String = {
-                if p.path().extension() == Some(std::ffi::OsStr::new("png"))
-                    || p.path().extension() == Some(std::ffi::OsStr::new("jpg"))
-                    || p.path().extension() == Some(std::ffi::OsStr::new("jpeg"))
+                if ext == Some(std::ffi::OsStr::new("png"))
+                    || ext == Some(std::ffi::OsStr::new("jpg"))
+                    || ext == Some(std::ffi::OsStr::new("jpeg"))
+                    || ext == Some(std::ffi::OsStr::new("pdf"))
                 {
                     data.handlebars
                         .render(
