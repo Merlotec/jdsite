@@ -4,6 +4,8 @@ use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use actix_web_middleware_redirect_https::RedirectHTTPS;
+
 #[macro_use]
 pub mod db;
 
@@ -98,6 +100,10 @@ async fn main() -> std::io::Result<()> {
                     .header("Cache-Control", "no-cache, no-store, must-revalidate")
                     .header("Pragma", "no-cache")
                     .header("expires", "0"),
+            )
+            .wrap(
+                // we want to force https to ensure intetrity
+                RedirectHTTPS::default(),
             )
             // User
             .service(page::user::user_get)

@@ -308,6 +308,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-middleware-redirect-https"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ce1464786203c29120f6d1e4dcdc9c3975506e70b89c3a56c5389f265256dc6"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "futures",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1388,6 +1399,7 @@ dependencies = [
  "actix-files",
  "actix-multipart",
  "actix-web",
+ "actix-web-middleware-redirect-https",
  "async-std",
  "bincode",
  "chrono",
