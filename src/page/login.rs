@@ -347,6 +347,7 @@ pub struct CreateAccountForm {
     pub email: String,
     pub password: String,
     pub confirm: String,
+    pub privacy: Option<String>,
 }
 
 #[post("/user/create_account/{link_token}")]
@@ -360,17 +361,20 @@ pub async fn create_account_post(
         Ok(token) => {
             match data.authenticate_context_from_request(&req, false) {
                 Ok(ctx) => {
+                    if form.privacy.is_none() {
+                        return create_account_page(ctx, &data, token, "You must agree to the privacy policy to continue");
+                    }
                     if form.password != form.confirm {
-                        return create_account_page(ctx, &data, token, "Passwords do not match!");
+                        return create_account_page(ctx, &data, token, "Passwords do not match");
                     }
                     if !util::is_password_valid(&form.password) {
-                        return create_account_page(ctx, &data, token, "Invalid password! Password must be 6 characters or more.");
+                        return create_account_page(ctx, &data, token, "Invalid password - password must be 6 characters or more");
                     }
                     if !util::is_string_server_valid(&form.forename)
                         || !util::is_string_server_valid(&form.surname)
                         || !util::is_email_valid(&form.email)
                     {
-                        return create_account_page(ctx, &data, token, "Invalid user details!");
+                        return create_account_page(ctx, &data, token, "Invalid user details");
                     }
 
                     match data.link_manager.fetch(&token) {

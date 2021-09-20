@@ -91,21 +91,10 @@ async fn main() -> std::io::Result<()> {
     // Spawn notification process using the actix runtime
     actix_web::rt::spawn(notifications::user_notification_process(data.clone()));
 
-    let mut builder = HttpServer::new(move || {
-        App::new()
+    let mut https_builder = HttpServer::new(move || {
+        // User
+       App::new()
             .data(data.clone())
-            // Prevent caching of dynamic data.
-            .wrap(
-                middleware::DefaultHeaders::new()
-                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
-                    .header("Pragma", "no-cache")
-                    .header("expires", "0"),
-            )
-            .wrap(
-                // we want to force https to ensure intetrity
-                RedirectHTTPS::default(),
-            )
-            // User
             .service(page::user::user_get)
             .service(page::user::delete_user_post)
             .service(page::user::enable_notifications_get)
@@ -153,25 +142,34 @@ async fn main() -> std::io::Result<()> {
             // Outstanding
             .service(page::outstanding::outstanding_get)
             // Help
-            .service(page::help::help_get)
+            .service(page::details::help_get)
+
+            .service(page::details::privacy_get)
             // Root
             .service(page::root_get)
 
             // Static files
             .route("/{filename:.*}", web::get().to(static_file))
-        //.service(Files::new("/", "static").index_file("index.html"))
+            .wrap(
+                middleware::DefaultHeaders::new()
+                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    .header("Pragma", "no-cache")
+                    .header("expires", "0"),
+            )
+            .wrap(RedirectHTTPS::default())
+       
     })
     .bind("0.0.0.0:80")?;
 
     // https
-    let mut https_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-    if https_builder
+    let mut ssl_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    if ssl_builder
         .set_private_key_file("key.pem", SslFiletype::PEM)
         .is_ok() {
-        if https_builder
+        if ssl_builder
         .set_certificate_chain_file("cert.pem")
             .is_ok() {
-            builder = builder.bind_openssl("0.0.0.0:443", https_builder)?;
+            https_builder = https_builder.bind_openssl("0.0.0.0:443", ssl_builder)?;
         } else {
             log::warn!("Invalid certificate chain `cert.pem` file - SSL not enabled!");
         }
@@ -179,6 +177,6 @@ async fn main() -> std::io::Result<()> {
         log::warn!("Invalid private key `key.pem` file - SSL not enabled!");
     }
 
-    builder.run()
+    https_builder.run()
     .await
 }

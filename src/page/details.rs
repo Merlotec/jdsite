@@ -39,3 +39,35 @@ pub async fn help_get(
             .set_body(Body::from(format!("Error: {}", e))),
     }
 }
+
+#[get("/privacy")]
+pub async fn privacy_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+) -> HttpResponse {
+
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(ctx) => {
+            let org_page = data
+            .handlebars
+            .render(
+                "shared/privacy",
+                &(),
+            )
+            .unwrap();
+
+            let body = page::render_page(
+                ctx,
+                &data,
+                dir::APP_NAME.to_owned() + " | Privacy",
+                dir::EXTENDED_APP_NAME.to_owned(),
+                org_page,
+            )
+            .unwrap();
+
+            HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+        },
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}

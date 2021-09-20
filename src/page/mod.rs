@@ -6,7 +6,7 @@ pub mod outstanding;
 pub mod section;
 pub mod unreviewed;
 pub mod user;
-pub mod help;
+pub mod details;
 pub mod admin;
 
 use std::sync::Arc;
