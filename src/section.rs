@@ -466,7 +466,7 @@ impl SectionInfo {
                 activities: hashmap!["first_aid".to_owned() => Activity {
                     name: "First Aid".to_owned(),
                     subtitle: "Critical thinking".to_owned(),
-                    activity_url: "sections/silver/first_aid/first_aid".to_owned(),
+                    activity_url: "sections/gold/first_aid/first_aid".to_owned(),
                     components: Vec::new(),
                 }],
             },
