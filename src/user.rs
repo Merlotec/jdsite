@@ -24,13 +24,15 @@ pub enum Privilege {
     RootLevel,
     AdminLevel,
     OrgLevel,
+    AssociateLevel,
     ClientLevel,
 }
 
 impl Privilege {
     pub fn magnitude(&self) -> i32 {
         match self {
-            Privilege::ClientLevel => 1,
+            Privilege::ClientLevel => 0,
+            Privilege::AssociateLevel => 1,
             Privilege::OrgLevel => 2,
             Privilege::AdminLevel => 3,
             Privilege::RootLevel => 4,
@@ -93,7 +95,7 @@ impl UserAgent {
             UserAgent::Owner => Privilege::RootLevel,
             UserAgent::Admin => Privilege::AdminLevel,
             UserAgent::Organisation(_) => Privilege::OrgLevel,
-            UserAgent::Associate(_) => Privilege::OrgLevel,
+            UserAgent::Associate(_) => Privilege::AssociateLevel,
             UserAgent::Client { .. } => Privilege::ClientLevel,
         }
     }
