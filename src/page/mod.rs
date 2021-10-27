@@ -151,7 +151,7 @@ pub fn path_header(
 }
 
 pub fn not_authorized_page(ctx: Option<AuthContext>, data: &SharedData) -> HttpResponse {
-    error_page(ctx, data, "Not Authorised", "You are not authorised to access this page!")
+    error_page(ctx, data, "Not Authorised", "You are not authorised to access this page")
 }
 
 pub fn error_page(ctx: Option<AuthContext>, data: &SharedData, title: &str, text: &str) -> HttpResponse {
