@@ -152,6 +152,14 @@ impl UserAgent {
         }
     }
 
+    pub fn can_view_stats(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            UserAgent::Admin => true,
+            _ => false,
+        }
+    }
+
     pub fn can_add_admin(&self) -> bool {
         match self {
             UserAgent::Owner => true,

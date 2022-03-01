@@ -9,6 +9,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
 use user::{User, UserAgent, UserKey};
+use crate::section::{AwardInfo, SectionInfo};
 
 pub struct SharedData {
     pub fs_root: String,
@@ -432,12 +433,14 @@ impl SharedData {
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
                 (dir::ACCOUNTS_PATH.to_string(), dir::ACCOUNTS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
+                (dir::STATS_PAGE.to_string(), dir::STATS_TITLE.to_string()),
             ],
             UserAgent::Admin => vec![
                 (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
                 (dir::ORGS_PAGE.to_string(), dir::ORGS_TITLE.to_string()),
                 (dir::ACCOUNTS_PATH.to_string(), dir::ACCOUNTS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
+                (dir::STATS_PAGE.to_string(), dir::STATS_TITLE.to_string()),
             ],
             UserAgent::Organisation(org_id) => vec![
                 (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),
@@ -521,5 +524,94 @@ impl SharedData {
 
         let mut mailer = self.mailer.lock().ok()?;
         mailer.send(email.into()).ok()
+    }
+
+    pub fn get_activity_stats(&self) -> Stats {
+        let mut stats: Stats = Stats::new(&self.awards);
+        self.user_db.for_each_val(|user| {
+            if let UserAgent::Client { award, sections, .. } = user.user_agent {
+                if let Some(aw) = stats.awards.get_mut(&award) {
+                    aw.total += 1;
+                    for (i, section_id) in sections.iter().enumerate() {
+                        if let Some(section_id) = section_id {
+                            if let Ok(Some(section)) = self.section_db.fetch(section_id) {
+                                aw.sections[section.section_index].total += 1;
+                                aw.sections[section.section_index].increment(&section.activity, section.state.is_completed());
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        stats
+    }
+}
+
+pub struct Stats {
+    pub awards: HashMap<String, AwardPoint>,
+}
+
+impl Stats {
+    pub fn new(awards: &HashMap<String, AwardInfo>) -> Self {
+        let mut aw: HashMap<String, AwardPoint> = HashMap::with_capacity(awards.len());
+        for (id, award_info) in awards.iter() {
+            aw.insert(id.clone(), AwardPoint::new(award_info));
+        }
+
+        Self {
+            awards: aw,
+        }
+    }
+}
+
+pub struct AwardPoint {
+    pub total: usize,
+    pub sections: Vec<SectionPoint>,
+}
+
+impl AwardPoint {
+    pub fn new(award_info: &AwardInfo) -> Self {
+        AwardPoint {
+            total: 0,
+            sections: award_info.sections.iter().map( | x| SectionPoint::new(&x)).collect(),
+        }
+    }
+}
+
+pub struct SectionPoint {
+    pub total: usize,
+    pub activities: HashMap<String, ActivityPoint>,
+}
+
+impl SectionPoint {
+    pub fn new(section_info: &SectionInfo) -> Self {
+        SectionPoint {
+            total: 0,
+            activities: section_info.activities.iter().map(|(k, _)| (k.clone(), ActivityPoint::new())).collect(),
+        }
+    }
+
+    pub fn increment(&mut self, activity: &str, completed: bool) {
+        if let Some(p) = self.activities.get_mut(activity) {
+            p.selected += 1;
+            if completed {
+                p.completed += 1;
+            }
+        }
+    }
+}
+
+pub struct ActivityPoint {
+    pub selected: usize,
+    pub completed: usize,
+}
+
+impl ActivityPoint {
+    pub fn new() -> Self {
+        Self {
+            selected: 0,
+            completed: 0,
+        }
     }
 }

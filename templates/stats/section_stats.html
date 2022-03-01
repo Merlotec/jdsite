@@ -1,0 +1,37 @@
+<div class="inner-nav-section">
+    <a class="back-button" href="{{back_url}}">
+        &lt;
+    </a>
+    <span class="inner-header" style="display: inline-block;">
+        {{section_name}} - Stats
+    </span>
+</div>
+
+<div class="center-content">
+    <img class="choose-option-image" src="{{section_image_url}}"/>
+    <div class="choose-option-header" style="text-align: center;">
+        Below are the stats of each activity.
+    </div>
+
+    <br>
+    <table class="stats-table; bubble-large">
+        <tr style="width: 100%;">
+            <td>Total Choices</td>
+            <td>Total Completions</td>
+            <td>Completion Rate</td>
+        </tr>
+        <tr>
+            <td>{{choices}}</td>
+            <td>{{completions}}</td>
+            <td>{{completion_rate}}</td>
+        </tr>
+    </table>
+
+    <br>
+    <div id="sections">
+        {{{activities}}}
+    </div>
+    <br>
+
+    <br><br><br>
+</div>

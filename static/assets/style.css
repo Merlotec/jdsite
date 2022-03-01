@@ -666,6 +666,20 @@ b {
     background-color: rgb(66, 65, 78);
 }
 
+.activity-option-stat {
+    padding: 40px;
+    text-align: left;
+    float: center;
+    width: 60%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    font-size: 18px;
+    border: 1px solid rgb(66, 65, 78);
+    border-radius: 40px;
+}
+
 .activity-option-selected {
     border: 1px solid #de9750;
     background-color: rgb(66, 65, 78);
@@ -941,4 +955,31 @@ b {
 .bold-title {
     color: white;
     font-weight: bold;
+}
+
+.stats-table {
+    display: inline-block;
+    margin: auto;
+    layout: block;
+    border: none;
+}
+
+.choose-award-image {
+    float: center;
+    display: block;
+    margin-top: 30px;
+    width: 90px;
+    height: 90px;
+    margin-bottom: 50px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.award-title {
+    font-size: 30px;
+    color: white;
+    font-weight: bold;
+    display: block;
+    text-align: center;
+    width: 100%;
 }

@@ -33,6 +33,9 @@ pub const ORGS_TITLE: &'static str = "Organisations";
 pub const OA_PAGE: &'static str = "/outstanding";
 pub const OA_TITLE: &'static str = "Outstanding Achievements";
 
+pub const STATS_PAGE: &'static str = "/stats";
+pub const STATS_TITLE: &'static str = "Stats";
+
 pub const DELETE_USER_PATH: &'static str = "/delete_user";
 
 // Organisation

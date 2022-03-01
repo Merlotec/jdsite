@@ -8,6 +8,7 @@ pub mod unreviewed;
 pub mod user;
 pub mod details;
 pub mod admin;
+pub mod stats;
 
 use std::sync::Arc;
 
