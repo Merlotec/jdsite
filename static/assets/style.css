@@ -983,3 +983,28 @@ b {
     text-align: center;
     width: 100%;
 }
+
+.section-stat-table {
+    margin-top: 7px;
+}
+
+.minirow {
+    margin: 2px;
+    padding: 0px;
+}
+
+.right-cell {
+    margin: 2px;
+    margin-right: 15px;
+    padding: 0px;
+    padding-right: 15px;
+    text-align: right;
+}
+
+.left-cell {
+    margin: 2px;
+    margin-left: 15px;
+    padding: 0px;
+    padding-left: 15px;
+    text-align: left;
+}

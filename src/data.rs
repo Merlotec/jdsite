@@ -600,6 +600,10 @@ impl SectionPoint {
             }
         }
     }
+
+    pub fn completions(&self) -> usize {
+        self.activities.iter().map(|(_, v)| v.completed).sum()
+    }
 }
 
 pub struct ActivityPoint {

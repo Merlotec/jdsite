@@ -195,17 +195,32 @@ pub async fn stats_award_get(
                 if let Some(award) = data.awards.get(award_id) {
                     let mut sections_body: String = String::new();
                     let mut completed_count: usize = 0;
-                    for (i, section) in award.sections.iter().enumerate() {
 
-                        sections_body += &data.handlebars.render("client/client_section_bubble", &json!({
-                                                        "section_url": format!("/stats/{}/{}", award_id, i),
-                                                        "section_image_url": &section.image_url,
-                                                        "section_title": &section.name,
-                                                        "activity_title": "Click to view stats",
-                                                        "activity_title_class": "activity-chosen",
-                                                        "state": "",
-                                                        "state_class": "",
-                                                    })).unwrap();
+                    let stats = data.get_activity_stats();
+                    let award_point = stats.awards.get(award_id).unwrap();
+
+                    for (i, section) in award.sections.iter().enumerate() {
+                        let section_point = &award_point.sections[i];
+                        let selections = section_point.total;
+                        let completions = section_point.completions();
+
+                        let completion_rate: String =  {
+                            if selections == 0 {
+                                "N/A".to_string()
+                            } else {
+                                let p = (completions as f32 / selections as f32) * 100.0;
+                                format!("{:.prec$}%", p, prec = 1)
+                            }
+                        };
+
+                        sections_body += &data.handlebars.render("stats/stats_section_bubble", &json!({
+                            "section_url": format!("/stats/{}/{}", award_id, i),
+                            "section_image_url": &section.image_url,
+                            "section_title": &section.name,
+                            "choices": selections,
+                            "completions": completions,
+                            "completion_rate": completion_rate,
+                        })).unwrap();
                     }
 
                     let body: String = data
