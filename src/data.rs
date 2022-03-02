@@ -532,21 +532,21 @@ impl SharedData {
             if let UserAgent::Client { award, sections, .. } = user.user_agent {
                 if let Some(aw) = stats.awards.get_mut(&award) {
                     aw.total += 1;
-                    let mut completed = true;
+                    let mut completed = 0;
                     for section_id in sections.iter() {
                         if let Some(section_id) = section_id {
                             if let Ok(Some(section)) = self.section_db.fetch(section_id) {
                                 aw.sections[section.section_index].total += 1;
                                 aw.sections[section.section_index].increment(&section.activity, section.state.is_completed());
-                                if !section.state.is_completed() {
-                                    completed = false;
+                                if section.state.is_completed() {
+                                    completed += 1;
                                 }
                             }
                         }
                     }
 
                     // Completed the entire award.
-                    if completed {
+                    if completed == sections.len() {
                         aw.completed += 1;
                     }
                 }
