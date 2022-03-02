@@ -532,13 +532,22 @@ impl SharedData {
             if let UserAgent::Client { award, sections, .. } = user.user_agent {
                 if let Some(aw) = stats.awards.get_mut(&award) {
                     aw.total += 1;
-                    for (i, section_id) in sections.iter().enumerate() {
+                    let mut completed = true;
+                    for section_id in sections.iter() {
                         if let Some(section_id) = section_id {
                             if let Ok(Some(section)) = self.section_db.fetch(section_id) {
                                 aw.sections[section.section_index].total += 1;
                                 aw.sections[section.section_index].increment(&section.activity, section.state.is_completed());
+                                if !section.state.is_completed() {
+                                    completed = false;
+                                }
                             }
                         }
+                    }
+
+                    // Completed the entire award.
+                    if completed {
+                        aw.completed += 1;
                     }
                 }
             }
@@ -567,6 +576,7 @@ impl Stats {
 
 pub struct AwardPoint {
     pub total: usize,
+    pub completed: usize,
     pub sections: Vec<SectionPoint>,
 }
 
@@ -574,7 +584,8 @@ impl AwardPoint {
     pub fn new(award_info: &AwardInfo) -> Self {
         AwardPoint {
             total: 0,
-            sections: award_info.sections.iter().map( | x| SectionPoint::new(&x)).collect(),
+            completed: 0,
+            sections: award_info.sections.iter().map(|x| SectionPoint::new(&x)).collect(),
         }
     }
 }

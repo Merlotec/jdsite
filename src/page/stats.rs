@@ -1,5 +1,4 @@
 use actix_web::{body::Body, http, web, HttpRequest, HttpResponse};
-use std::str::FromStr;
 use std::sync::Arc;
 
 use serde_json::json;
@@ -7,16 +6,9 @@ use serde_json::json;
 use crate::data::SharedData;
 
 use crate::dir;
-use crate::link;
-use crate::login;
-use crate::org;
 use crate::page;
-use crate::user;
-use crate::util;
 
-use user::Privilege;
-
-use actix_web::{get, post};
+use actix_web::get;
 
 #[get("/stats/{award}/{section}")]
 pub async fn stats_section_get(
@@ -40,13 +32,6 @@ pub async fn stats_section_get(
                     let mut total_completions: usize = 0;
 
                     for (id, activity) in section.activities.iter() {
-                        let desc: String = {
-                            match data.handlebars.render(&activity.activity_url, &()) {
-                                Ok(data) => data,
-                                Err(e) => format!("Failed to render: {}", e),
-                            }
-                        };
-
                         let activity_point = section_point.activities.get(id).unwrap();
 
                         total_completions += activity_point.completed;
@@ -142,7 +127,18 @@ pub async fn stats_get(
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_view_stats() {
                 let mut awards = String::new();
+                let stats = data.get_activity_stats();
+
                 for (award_id, award) in data.awards.iter() {
+                    let award_point = stats.awards.get(award_id).unwrap();
+                    let completion_rate: String =  {
+                        if award_point.total == 0 {
+                            "N/A".to_string()
+                        } else {
+                            let p = (award_point.completed as f32 / award_point.total as f32) * 100.0;
+                            format!("{:.prec$}%", p, prec = 1)
+                        }
+                    };
                     awards += &data
                         .handlebars
                         .render(
@@ -151,6 +147,9 @@ pub async fn stats_get(
                                 "award_stat_path": format!("/stats/{}", award_id),
                                 "award_image_url": &award.image_url,
                                 "title": &award.name,
+                                "participants": award_point.total,
+                                "completions": award_point.completed,
+                                "completion_rate": completion_rate,
                         }),
                         )
                         .unwrap();
@@ -194,7 +193,6 @@ pub async fn stats_award_get(
                 let award_id = &path.0;
                 if let Some(award) = data.awards.get(award_id) {
                     let mut sections_body: String = String::new();
-                    let mut completed_count: usize = 0;
 
                     let stats = data.get_activity_stats();
                     let award_point = stats.awards.get(award_id).unwrap();
