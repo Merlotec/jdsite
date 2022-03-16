@@ -171,6 +171,25 @@ impl<K: AsRef<[u8]> + ?Sized, V: Serialize + DeserializeOwned> Database<K, V> {
         self.db.contains_key(key)
     }
 
+    /// Returns the list of keys in the database.
+    pub fn keys<OwnedKey>(&self) -> Vec<OwnedKey>
+    where
+        K: ToOwned<Owned = OwnedKey>,
+        OwnedKey: TryFrom<sled::IVec> + Sized, {
+        self.db.iter().filter_map(|r| {
+            match r {
+                Ok((k, _)) => {
+                    if let Ok(k) = OwnedKey::try_from(k) {
+                        Some(k)
+                    } else {
+                        None
+                    }
+                },
+                Err(_) => None,
+            }
+        }).collect()
+    }
+
     /// Executes f for each value that can be deserialized in the database.
     pub fn for_each_val<F>(&self, mut f: F)
     where

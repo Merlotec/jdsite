@@ -145,8 +145,12 @@ async fn main() -> std::io::Result<()> {
             .service(page::details::help_get)
             // Stats
             .service(page::stats::stats_get)
-           .service(page::stats::stats_award_get)
+            .service(page::stats::stats_award_get)
             .service(page::stats::stats_section_get)
+            //Admin
+           .service(page::admin::admin_get)
+           .service(page::admin::delete_data_get)
+           .service(page::admin::delete_data_post)
             // Privacy
             .service(page::details::privacy_get)
             // Root
@@ -160,10 +164,10 @@ async fn main() -> std::io::Result<()> {
                     .header("Pragma", "no-cache")
                     .header("expires", "0"),
             )
-            .wrap(RedirectHTTPS::default())
+            //.wrap(RedirectHTTPS::default())
        
     })
-    .bind("0.0.0.0:80")?;
+    .bind("0.0.0.0:8000")?;
 
     // https
     let mut ssl_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();

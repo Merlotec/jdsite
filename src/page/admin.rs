@@ -16,6 +16,7 @@ use crate::util;
 use crate::login;
 
 use actix_web::{get, post};
+use crate::user::UserKey;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct AccountsQuery {
@@ -307,6 +308,187 @@ pub async fn add_admin_post(
                         Err(e) =>  add_admin_page(data, req, &format!("Something went wrong: ensure that the email is unique: {}", e)),
                     }
                 }
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        }
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}
+
+
+
+pub fn delete_data_page(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    err_msg: &str,
+) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_administrate() {
+                let content = data.handlebars.render("admin/delete_data", &json!({
+                    "back_url": dir::ADMIN_PATH,
+                    "delete_url": dir::DELETE_PATH,
+                    "err_msg": err_msg,
+                })).unwrap();
+
+                let body = page::render_page(
+                    Some(ctx),
+                    &data,
+                    dir::APP_NAME.to_owned() + " | Delete Data",
+                    dir::EXTENDED_APP_NAME.to_owned(),
+                    content,
+                )
+                    .unwrap();
+
+                HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        }
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}
+
+#[get("/admin/delete")]
+pub async fn delete_data_get(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+) -> HttpResponse {
+    delete_data_page(data, req, "")
+}
+
+#[derive(serde::Deserialize)]
+pub struct DeleteDataForm {
+    delete_pupils: Option<String>,
+    delete_credits: Option<String>,
+    delete_orgs: Option<String>,
+    password: String,
+}
+
+#[post("/admin/delete")]
+pub async fn delete_data_post(
+    data: web::Data<Arc<SharedData>>,
+    req: HttpRequest,
+    form: web::Form<DeleteDataForm>,
+) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_administrate() {
+                if let Ok(_) = data.login_db.authenticate(&ctx.user.email, &form.password) {
+                    // We can now delete the data.
+                    let mut info: String = String::new();
+                    if let Some(_) = form.delete_orgs {
+                        for org_id in data.org_db.keys() {
+                            let _ = data.delete_org(&org_id);
+                        }
+                        info = "organisations".to_string();
+                    } else {
+
+                        if let Some(_) = form.delete_credits {
+                            data.org_db.for_each_write(|mut org| { org.credits = 0; });
+                            info += "credits"
+                        }
+                        if let Some(_) = form.delete_pupils {
+                            let mut users: Vec<UserKey> = Vec::new();
+                            data.user_db.for_each(|k, v| {
+                                if v.user_agent.is_client() {
+                                    users.push(*k);
+                                }
+                            });
+                            for user_id in users {
+                                data.delete_user(&user_id);
+                            }
+                            if !info.is_empty() {
+                                info += ", pupils";
+                            } else {
+                                info += "pupils";
+                            }
+                        }
+                    }
+                    let content = data.handlebars.render("admin/data_deleted", &json!({
+                                "back_url": dir::ADMIN_PATH,
+                                "deletion_info": info,
+                            })).unwrap();
+
+                    let body = page::render_page(Some(ctx), &data, dir::APP_NAME.to_owned() + " | " + "Data Deleted", dir::EXTENDED_APP_NAME.to_owned(), content).unwrap();
+
+                    HttpResponse::new(http::StatusCode::OK)
+                        .set_body(Body::from(body))
+                } else {
+                    delete_data_page(data, req, "Incorrect confirmation password specified!")
+                }
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        }
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}
+
+#[get("/admin")]
+pub async fn admin_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_administrate() {
+                let disk = match sys_info::disk_info() {
+                    Ok(info) => {
+                        let free = info.free as f32;
+                        let total = info.total as f32;
+                        let p = ((total - free) / total) * 100.0;
+                        let free_gb = free / 1_000_000.0;
+                        let total_gb = total / 1_000_000.0;
+
+                        format!("{:.precgb$}GB of {:.precgb$}GB ({:.prec$}% used)", free_gb, total_gb, p, precgb = 2, prec = 1)
+                    },
+                    Err(_) => "Error retrieving data!".to_owned(),
+                };
+
+                let memory = match sys_info::mem_info() {
+                    Ok(info) => {
+                        let free = info.free as f32;
+                        let total = info.total as f32;
+                        let p = ((total - free) / total) * 100.0;
+                        let free_gb = free / 1_000_000.0;
+                        let total_gb = total / 1_000_000.0;
+
+                        format!("{:.precgb$}GB of {:.precgb$}GB ({:.prec$}% used)", free_gb, total_gb, p, precgb = 2, prec = 1)
+                    },
+                    Err(_) => "Error retrieving data!".to_owned(),
+                };
+
+
+                let content = data
+                    .handlebars
+                    .render(
+                        "admin/admin",
+                        &json!({
+                            "disk": disk,
+                            "memory": memory,
+                            "delete_url": dir::DELETE_PATH,
+                        }),
+                    )
+                    .unwrap();
+
+                let body = page::render_page(
+                    Some(ctx),
+                    &data,
+                    dir::APP_NAME.to_owned() + " | Admin",
+                    dir::EXTENDED_APP_NAME.to_owned(),
+                    content,
+                )
+                    .unwrap();
+
+                HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }

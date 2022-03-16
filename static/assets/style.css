@@ -249,6 +249,18 @@ b {
     cursor: pointer;
 }
 
+.submit-button-red {
+    border-style: none;
+    padding: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: darkred;
+    color: white;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
 .submit-button-disabled {
     border-style: none;
     padding: 10px;
@@ -307,6 +319,11 @@ b {
 .submit-button:hover {
     background-color: #f78f28;
 }
+
+.submit-button-red:hover {
+    background-color: red;
+}
+
 
 .content-table {
     border-collapse: collapse;
@@ -506,6 +523,14 @@ b {
 .center-form {
     display: block;
     text-align: center; 
+    width: 60%;
+    max-width: 500px;
+    margin: auto;
+}
+
+.left-form {
+    display: block;
+    text-align: left;
     width: 60%;
     max-width: 500px;
     margin: auto;

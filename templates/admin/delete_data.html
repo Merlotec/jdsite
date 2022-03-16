@@ -1,0 +1,52 @@
+<script>
+    function onOrgCheckboxClick() {
+        var delOrgs = document.getElementById('deleteOrgs');
+        var delPupils = document.getElementById('deletePupils');
+        var delCredits = document.getElementById('deleteCredits');
+
+        if (delOrgs.checked) {
+            delPupils.disabled = true;
+            delCredits.disabled = true;
+        } else {
+            delPupils.disabled = false;
+            delCredits.disabled = false;
+        }
+    }
+</script>
+
+<div class="inner-nav-section">
+    <a class="back-button" href="{{back_url}}">
+        &lt;
+    </a>
+    <span class="inner-header" style="display: inline-block;">
+        Delete Data
+    </span>
+</div>
+
+<div class="center-content">
+    <h4 style="text-align: center;">Select which data you want to delete by checking the boxes below. <b>Once any data is deleted it cannot be recovered</b>.</h4>
+    <p class="err-text">{{err_msg}}</p>
+    <form class="center-form" method="POST" action="{{delete_url}}">
+        <div style="text-align: left">
+             Checking the button below will result in every pupil account being erased.
+            <br><br>
+            <input id="deletePupils" type="checkbox" name="delete_pupils"/> <b>Delete all pupil accounts.</b>
+            <br><br><br>
+            Checking the button below will remove all credits from every organisation.
+            <br><br>
+            <input id="deleteCredits" type="checkbox" name="delete_credits"/> <b>Delete all pupil credits.</b>
+            <br><br><br>
+            Checking the button below will delete every organisation, including every pupil, teacher and organisation administrator accounts.
+            <br><br>
+            <input id="deleteOrgs" type="checkbox" name="delete_orgs" onchange="onOrgCheckboxClick()"/> <b>Delete all organisations.</b>
+        </div>
+
+        <br><br><br>
+        <span class="input-item-title">Enter your Password to Confirm</span>
+        <br>
+        <input id="addClientEmail" name="password" class="input-box" type="password" style="width: 100%; max-width: none;" placeholder="Password"/>
+        <br><br><br>
+        <input id="addClientSubmit" style="margin: auto;" class="submit-button-red" type="submit" value="Delete Data"/>
+        <br><br>
+    </form>
+</div>

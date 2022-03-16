@@ -27,6 +27,7 @@ openssl = { version = "0.10", features = ["v110"] }
 async-std = "1.9.0"
 maplit="1.0.2"
 actix-web-middleware-redirect-https = "3.0.1"
+sys-info = "0.9"
 
 log="0.4.14"
 simple-logging = "2.0.2"

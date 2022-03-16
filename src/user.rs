@@ -110,6 +110,13 @@ impl UserAgent {
         }
     }
 
+    pub fn can_administrate(&self) -> bool {
+        match self {
+            UserAgent::Owner => true,
+            _ => false,
+        }
+    }
+
     pub fn can_delete_invalid_users(&self) -> bool {
         match self {
             UserAgent::Owner => true,

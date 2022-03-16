@@ -434,6 +434,7 @@ impl SharedData {
                 (dir::ACCOUNTS_PATH.to_string(), dir::ACCOUNTS_TITLE.to_string()),
                 (dir::OA_PAGE.to_string(), dir::OA_TITLE.to_string()),
                 (dir::STATS_PAGE.to_string(), dir::STATS_TITLE.to_string()),
+                (dir::ADMIN_PATH.to_string(), dir::ADMIN_TITLE.to_string()),
             ],
             UserAgent::Admin => vec![
                 (dir::HELP_PAGE.to_string(), dir::HELP_TITLE.to_string()),

@@ -45,6 +45,9 @@ pub fn org_path(org_id: org::OrgKey) -> String {
     ORG_ROOT_PATH.to_owned() + "/" + &org_id.to_string()
 }
 
+pub const ADMIN_TITLE: &'static str = "Admin";
+pub const ADMIN_PATH: &'static str = "/admin";
+pub const DELETE_PATH: &'static str = "/admin/delete";
 
 pub const ACCOUNTS_PATH: &'static str = "/admin/accounts";
 pub const ACCOUNTS_TITLE: &'static str = "User Accounts";
