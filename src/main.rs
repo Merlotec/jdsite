@@ -164,10 +164,10 @@ async fn main() -> std::io::Result<()> {
                     .header("Pragma", "no-cache")
                     .header("expires", "0"),
             )
-            //.wrap(RedirectHTTPS::default())
+            .wrap(RedirectHTTPS::default())
        
     })
-    .bind("0.0.0.0:8000")?;
+    .bind("0.0.0.0:80")?;
 
     // https
     let mut ssl_builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
