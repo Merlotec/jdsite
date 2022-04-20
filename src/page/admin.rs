@@ -1,3 +1,5 @@
+use actix_files::NamedFile;
+use actix_web::http::header::{ContentDisposition, DispositionType, DispositionParam};
 use actix_web::{body::Body, http, web, HttpRequest, HttpResponse};
 
 use std::sync::Arc;
@@ -382,36 +384,42 @@ pub async fn delete_data_post(
         Ok(Some(ctx)) => {
             if ctx.user.user_agent.can_administrate() {
                 if let Ok(_) = data.login_db.authenticate(&ctx.user.email, &form.password) {
-                    // We can now delete the data.
-                    let mut info: String = String::new();
-                    if let Some(_) = form.delete_orgs {
-                        for org_id in data.org_db.keys() {
-                            let _ = data.delete_org(&org_id);
-                        }
-                        info = "organisations".to_string();
+                    // If nothing is selected, tell the user.
+                    let mut info: String;
+                    if form.delete_orgs.is_none() && form.delete_credits.is_none() && form.delete_credits.is_none() {
+                        info = "You did not select any data to delete!".to_owned();
                     } else {
-
-                        if let Some(_) = form.delete_credits {
-                            data.org_db.for_each_write(|mut org| { org.credits = 0; });
-                            info += "credits"
-                        }
-                        if let Some(_) = form.delete_pupils {
-                            let mut users: Vec<UserKey> = Vec::new();
-                            data.user_db.for_each(|k, v| {
-                                if v.user_agent.is_client() {
-                                    users.push(*k);
-                                }
-                            });
-                            for user_id in users {
-                                data.delete_user(&user_id);
+                        info = "You have deleted the following data: ".to_owned();
+                        if let Some(_) = form.delete_orgs {
+                            for org_id in data.org_db.keys() {
+                                let _ = data.delete_org(&org_id);
                             }
-                            if !info.is_empty() {
-                                info += ", pupils";
-                            } else {
-                                info += "pupils";
+                            info += "<b>organisations</b>";
+                        } else {
+                            if let Some(_) = form.delete_credits {
+                                data.org_db.for_each_write(|mut org| { org.credits = 0; });
+                                info += "<b>credits</b>"
+                            }
+                            if let Some(_) = form.delete_pupils {
+                                let mut users: Vec<UserKey> = Vec::new();
+                                data.user_db.for_each(|k, v| {
+                                    if v.user_agent.is_client() {
+                                        users.push(*k);
+                                    }
+                                });
+                                for user_id in users {
+                                    data.delete_user(&user_id);
+                                }
+                                if !info.is_empty() {
+                                    info += ", <b>pupils</b>";
+                                } else {
+                                    info += "<b>pupils</b>";
+                                }
                             }
                         }
                     }
+
+                    
                     let content = data.handlebars.render("admin/data_deleted", &json!({
                                 "back_url": dir::ADMIN_PATH,
                                 "deletion_info": info,
@@ -474,6 +482,7 @@ pub async fn admin_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Ht
                         &json!({
                             "disk": disk,
                             "memory": memory,
+                            "log_url": dir::DOWNLOAD_LOG_PATH,
                             "delete_url": dir::DELETE_PATH,
                         }),
                     )
@@ -489,6 +498,33 @@ pub async fn admin_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> Ht
                     .unwrap();
 
                 HttpResponse::new(http::StatusCode::OK).set_body(Body::from(body))
+            } else {
+                page::not_authorized_page(Some(ctx), &data)
+            }
+        }
+        Ok(None) => page::redirect_to_login(&req),
+
+        Err(e) => HttpResponse::new(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .set_body(Body::from(format!("Error: {}", e))),
+    }
+}
+
+#[get("/admin/log")]
+pub async fn log_get(data: web::Data<Arc<SharedData>>, req: HttpRequest) -> HttpResponse {
+    match data.authenticate_context_from_request(&req, true) {
+        Ok(Some(ctx)) => {
+            if ctx.user.user_agent.can_administrate() {
+                match  web::block(|| NamedFile::open(dir::LOG_PATH)).await {
+                    Ok(file) => file.set_content_disposition(ContentDisposition {
+                        disposition: DispositionType::Attachment,
+                        parameters: vec![
+                            DispositionParam::Name(String::from("log")),
+                            DispositionParam::Filename(String::from("log.txt")),
+                        ],
+                    }).into_response(&req).unwrap(),
+                    Err(e) => HttpResponse::new(http::StatusCode::BAD_REQUEST)
+                        .set_body(Body::from(format!("Failed to download log file: {}", e))),
+                }
             } else {
                 page::not_authorized_page(Some(ctx), &data)
             }

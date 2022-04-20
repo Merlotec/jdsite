@@ -44,7 +44,7 @@ async fn static_file(req: HttpRequest) -> Result<impl Responder> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // set up logger
-    simple_logging::log_to_file("log.txt", log::LevelFilter::Warn).expect("Failed to set up logger!!!");
+    simple_logging::log_to_file(dir::LOG_PATH, log::LevelFilter::Warn).expect("Failed to set up logger!!!");
 
     let data: Arc<SharedData> = Arc::new(
         SharedData::load_from_disk("root".to_string()).expect("Failed to load database data!"),
@@ -151,6 +151,7 @@ async fn main() -> std::io::Result<()> {
            .service(page::admin::admin_get)
            .service(page::admin::delete_data_get)
            .service(page::admin::delete_data_post)
+           .service(page::admin::log_get)
             // Privacy
             .service(page::details::privacy_get)
             // Root
@@ -164,7 +165,7 @@ async fn main() -> std::io::Result<()> {
                     .header("Pragma", "no-cache")
                     .header("expires", "0"),
             )
-            .wrap(RedirectHTTPS::default())
+            //.wrap(RedirectHTTPS::default())
        
     })
     .bind("0.0.0.0:80")?;

@@ -1,5 +1,7 @@
 use crate::*;
 
+pub const LOG_PATH: &'static str = "log.txt";
+
 pub const HOST: &'static str = "seniorportal.juniorduke.com";
 
 // Misc
@@ -48,6 +50,7 @@ pub fn org_path(org_id: org::OrgKey) -> String {
 pub const ADMIN_TITLE: &'static str = "Admin";
 pub const ADMIN_PATH: &'static str = "/admin";
 pub const DELETE_PATH: &'static str = "/admin/delete";
+pub const DOWNLOAD_LOG_PATH: &'static str = "/admin/log";
 
 pub const ACCOUNTS_PATH: &'static str = "/admin/accounts";
 pub const ACCOUNTS_TITLE: &'static str = "User Accounts";
