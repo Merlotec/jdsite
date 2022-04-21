@@ -165,7 +165,7 @@ async fn main() -> std::io::Result<()> {
                     .header("Pragma", "no-cache")
                     .header("expires", "0"),
             )
-            //.wrap(RedirectHTTPS::default())
+            .wrap(RedirectHTTPS::default())
        
     })
     .bind("0.0.0.0:80")?;
